@@ -1,1 +1,39 @@
-.idea
+# .env files
+/.env
+/.env.backup
+/.env.staging
+/.env.local
+
+# Docker files
+.dockerignore
+!/.dockerignore
+docker-compose.yml
+!/docker-compose.yml
+
+# Vendor directories
+/vendor
+/node_modules
+
+# Project-specific files
+/.idea/
+.vscode/
+.DS_Store
+*.log
+*.sqlite
+/storage/*.key
+/public/storage
+/public/hot
+
+# PHPStorm/IDE specific files
+.idea/
+.history
+.phpstorm.meta.php
+.blade.php.iml
+
+# Composer
+/composer.lock
+/composer.phar
+
+# NPM
+npm-debug.log
+yarn-error.log
