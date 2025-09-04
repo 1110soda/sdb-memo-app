@@ -13,7 +13,7 @@ const title = computed(() => {
 </script>
 
 <template>
-    <header class="p-4 flex flex-col items-center border-b border-secondary-200">
+    <header class="p-4 flex flex-col items-center border-b bg-white border-secondary-200">
         <div class="w-full flex justify-end mb-2">
             <nav>
                 <ul class="flex space-x-4">
@@ -38,8 +38,8 @@ const title = computed(() => {
         </div>
         <a href="/" class="text-center no-underline">
             <div class="flex items-center space-x-2">
-                <DocumentSvg class="w-8 h-8 text-accent-800" />
-                <h1 class="text-3xl font-thin text-accent-800">
+                <DocumentSvg class="w-8 h-8 text-accent-600" />
+                <h1 class="text-3xl font-light bg-gradient-to-r from-accent-600 to-primary-600 bg-clip-text text-transparent">
                     {{ title }}
                 </h1>
             </div>
