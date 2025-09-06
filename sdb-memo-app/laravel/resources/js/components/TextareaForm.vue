@@ -16,10 +16,17 @@
     }
 
     const handleEnter = (e: Event) => {
-        if (!e.shiftKey) {
-            emits('saveMemo');
-        } else {
+        if (e.shiftKey) {
             emits('update:modelValue', (e.target as HTMLTextAreaElement).value + '\n');
+        } else {
+        //  日本語入力の変換中のEnter入力を保存のEnter入力と認識させない
+            if (e.isComposing) {
+                e.preventDefault(); //フォームの送信を防ぐ
+            } else {
+                e.preventDefault(); //送信前の改行を防ぐ
+                emits('saveMemo');
+            }
+
         }
     };
 
