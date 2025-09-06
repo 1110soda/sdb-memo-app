@@ -6,46 +6,54 @@ import Button from "../components/Button.vue";
 
 const memoTitle = ref('');
 const memoContent = ref('');
-const userId = ref<string | null>(null);
-
-onMounted(() => {
-    if (document.body.hasAttribute('data-user-id')) {
-        userId.value = document.body.getAttribute('data-user-id');
-    }
-});
 
 const isContentEntered = computed(() => {
     return memoContent.value.length > 0;
 });
 
-const saveMemo = () => {
+const saveMemo = async() => {
     if (!isContentEntered.value) return;
 
-    let titleForAlert = '';
-    let contentForAlert = '';
-
-    // タイトル欄に入力がない場合、メモ内容の最初の行を見出しとして表示する。
-    if (memoTitle.value.length > 0) {
-        titleForAlert = `[${memoTitle.value}]`;
-        contentForAlert = memoContent.value;
-    } else {
-        const contentLines = memoContent.value.split('\n');
-        titleForAlert = `[${contentLines[0]}]`;
-        contentForAlert = memoContent.value;
+    if (memoTitle.value.length == 0) {
+        memoTitle.value = memoContent.value.split('\n')[0]; // タイトル欄に入力がない場合、メモ内容の最初の行を見出しとして表示する。
     }
 
-    alert(
-        `［保存されたメモ］\nタイトル: ${titleForAlert}\n内容: \n${contentForAlert}\n`
-    );
-    // 後にサーバーへ以下の情報を送り保存する
-    console.log({
-        user_id: userId.value,
-        title: memoTitle.value.length > 0 ? memoTitle.value : memoContent.value.split('\n')[0],
+    const memoData = {
+        title: memoTitle.value,
         content: memoContent.value,
-    });
+    };
 
-    memoTitle.value = '';
-    memoContent.value = '';
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'); //CSRFトークンを取得
+
+        // HTTPリクエストヘッダーを定義
+        const headers: HeadersInit = {
+            'Content-Type': 'application/json', //送信するデータの形式
+            'X-Requested-With': 'XMLHttpRequest', //LaravelがAjaxリクエストであることを認識するために必要
+        }
+        if (csrfToken) {
+            headers['X-CSRF-TOKEN'] = csrfToken; //セキュリティトークン
+        }
+
+        const response = await fetch('/api/memos', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(memoData),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert(result.message);
+            memoTitle.value = '';
+            memoContent.value = '';
+        } else {
+            alert(`保存に失敗しました: ${result.message || 'Unknown error'}`);
+        }
+    } catch (error) {
+        console.error('APIリクエストエラー:', error);
+        alert('メモの保存中にエラーが発生しました。');
+    }
 };
 </script>
 
