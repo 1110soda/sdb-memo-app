@@ -263,7 +263,7 @@ onMounted(() => {
                         {{ memo.content }}
                     </p>
                     <p class="text-sm font-medium text-secondary-700 mt-2">
-                        {{ memo.date }}
+                        作成: {{ memo.created_at }}、更新: {{ memo.updated_at }}
                     </p>
                 </div>
             </div>
