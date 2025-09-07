@@ -8,6 +8,7 @@
         "format": "prettier --write 'resources/**/*.{js,ts,vue}'"
     },
     "devDependencies": {
+        "@tailwindcss/line-clamp": "^0.4.4",
         "@vitejs/plugin-vue": "^6.0.1",
         "autoprefixer": "^10.4.21",
         "axios": "^1.11.0",
