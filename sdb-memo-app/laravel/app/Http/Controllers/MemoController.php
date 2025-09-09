@@ -63,4 +63,16 @@ class MemoController extends Controller
             'data' => $memo,
         ], 201); //201: HTTPステータスコード:作成完了
     }
+
+    public function destroy(string $id)
+    {
+        try {
+            $memo = Memo::findOrFail($id);
+            $memo->delete();
+
+            return response()->json(['message' => 'メモが正常に削除されました。']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'メモの削除に失敗しました。'], 500); //500: HTTPステータスコード:Internal Server Error
+        }
+    }
 }

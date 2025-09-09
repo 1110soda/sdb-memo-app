@@ -10,8 +10,9 @@ const memoTitle = ref('');
 const memoContent = ref('');
 const memos = ref([]); //APIから取得したメモ一覧
 const expandedMemos = ref<number[]>([]); //展開されているメモカードのIDを保持
-const isFetchingAPI = ref(true);
+const isFetchingAPI = ref(false);
 const isSavingAPI = ref(false);
+const isDeletingAPI = ref(false);
 
 // ページネーション処理
 const currentPage = ref(1);
@@ -75,7 +76,10 @@ const tempMemos = ref([
 
 // メモ取得API
 const fetchMemos = async (page = 1) => {  //ページネーション有効化時は最初のページを表示
+    if (isFetchingAPI.value) return;
+
     isFetchingAPI.value = true;
+
     try {
         let url = '';
         if (isPaginationEnabled.value) {
@@ -172,7 +176,7 @@ const saveMemo = async() => {
             alert(result.message);
             memoTitle.value = '';
             memoContent.value = '';
-            await fetchMemos(); //新しいメモを保存後、リストを再取得し、表示画面を更新
+            await fetchMemos(currentPage.value); //新しいメモを保存後、リストを再取得し、表示画面を更新
         } else {
             alert(`保存に失敗しました: ${result.message || 'Unknown error'}`);
         }
@@ -183,6 +187,43 @@ const saveMemo = async() => {
         isSavingAPI.value = false;
     }
 };
+
+// メモ削除API
+const deleteMemo = async(id: number) => {
+    if (isDeletingAPI.value) return;
+
+    isDeletingAPI.value = true;
+
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        const headers: HeadersInit = {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+        if (csrfToken) {
+            headers['X-CSRF-TOKEN'] = csrfToken;
+        }
+
+        const response = await fetch(`/api/memos/${id}`, {
+            method: 'DELETE',
+            headers: headers,
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert(result.message);
+            await fetchMemos(currentPage.value);
+        } else {
+            alert(`削除に失敗しました: ${result.message || 'Unknown error'}`);
+        }
+    } catch (error) {
+        console.error('APIリクエストエラー:', error);
+        alert('メモの削除中にエラーが発生しました。')
+    } finally {
+        isDeletingAPI.value = false;
+    }
+}
 
 onMounted(() => {
     fetchMemos();
@@ -252,7 +293,7 @@ onMounted(() => {
                 </p>
                 <div v-for="memo in memos" :key="memo.id" @click="toggleExpand(memo.id)" class="group relative bg-white min-w-0 p-4 rounded-lg shadow-lg cursor-pointer hover:scale-105 hover:shadow-secondary-400 transition-all duration-300">
                     <div class="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                        <button @click.stop="" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
+                        <button @click.stop="deleteMemo(memo.id)" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
                             <TrashSvg class="w-4 h-4" />
                         </button>
                     </div>
