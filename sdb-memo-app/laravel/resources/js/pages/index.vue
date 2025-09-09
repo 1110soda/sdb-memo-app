@@ -5,6 +5,7 @@ import PlusSvg from "../components/svgs/PlusSvg.vue";
 import TrashSvg from "../components/svgs/TrashSvg.vue";
 import TextareaForm from "../components/TextareaForm.vue";
 import Button from "../components/Button.vue";
+import Modal from "../components/Modal.vue";
 
 const memoTitle = ref('');
 const memoContent = ref('');
@@ -13,6 +14,8 @@ const expandedMemos = ref<number[]>([]); //展開されているメモカード�
 const isFetchingAPI = ref(false);
 const isSavingAPI = ref(false);
 const isDeletingAPI = ref(false);
+const isModalOpen = ref(false);
+const memoToDelete = ref<any | null>(null);
 
 // ページネーション処理
 const currentPage = ref(1);
@@ -189,8 +192,8 @@ const saveMemo = async() => {
 };
 
 // メモ削除API
-const deleteMemo = async(id: number) => {
-    if (isDeletingAPI.value) return;
+const deleteMemo = async() => {
+    if (isDeletingAPI.value || memoToDelete.value === null) return;
 
     isDeletingAPI.value = true;
 
@@ -204,7 +207,7 @@ const deleteMemo = async(id: number) => {
             headers['X-CSRF-TOKEN'] = csrfToken;
         }
 
-        const response = await fetch(`/api/memos/${id}`, {
+        const response = await fetch(`/api/memos/${memoToDelete.value.id}`, {
             method: 'DELETE',
             headers: headers,
         });
@@ -222,7 +225,19 @@ const deleteMemo = async(id: number) => {
         alert('メモの削除中にエラーが発生しました。')
     } finally {
         isDeletingAPI.value = false;
+        isModalOpen.value = false;
+        memoToDelete.value = null;
     }
+}
+
+const confirmDelete = (memo: any) => {
+    memoToDelete.value = memo;
+    isModalOpen.value = true;
+}
+
+const cancelDelete = () => {
+    memoToDelete.value = null;
+    isModalOpen.value = false;
 }
 
 onMounted(() => {
@@ -275,7 +290,7 @@ onMounted(() => {
                     </h2>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <button @click="togglePagination" class="text-sm text-secondary-700 bg-black bg-opacity-0 rounded-full px-3 py-1 mr-2 hover:text-secondary-900 hover:bg-opacity-5 hover:scale-105 transition-all duration-300">
+                    <button @click="togglePagination" class="text-sm text-secondary-700 bg-black bg-opacity-0 rounded-full px-3 py-1 mr-2 hover:text-secondary-900 hover:bg-opacity-5 transition-all duration-300">
                         <span v-if="isPaginationEnabled">全て表示</span>
                         <span v-else>ページ形式で表示</span>
                     </button>
@@ -293,7 +308,7 @@ onMounted(() => {
                 </p>
                 <div v-for="memo in memos" :key="memo.id" @click="toggleExpand(memo.id)" class="group relative bg-white min-w-0 p-4 rounded-lg shadow-lg cursor-pointer hover:scale-105 hover:shadow-secondary-400 transition-all duration-300">
                     <div class="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                        <button @click.stop="deleteMemo(memo.id)" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
+                        <button @click.stop="confirmDelete(memo)" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
                             <TrashSvg class="w-4 h-4" />
                         </button>
                     </div>
@@ -312,13 +327,15 @@ onMounted(() => {
                 <button
                     @click="fetchMemos()"
                     :disabled="currentPage === 1"
-                    class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 hover:text-secondary-900 hover:bg-opacity-5 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 transition-all duration-300"
+                    :class="[currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:text-secondary-900 hover:bg-opacity-5']">
                     &lt;&lt;
                 </button>
                 <button
                     @click="fetchMemos(currentPage - 1)"
                     :disabled="currentPage === 1"
-                    class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 hover:text-secondary-900 hover:bg-opacity-5 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 transition-all duration-300"
+                    :class="[currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:text-secondary-900 hover:bg-opacity-5']">
                     &lt;
                 </button>
                 <template v-for="page in displayedPages" :key="page">
@@ -327,7 +344,7 @@ onMounted(() => {
                         @click="fetchMemos(Number(page))"
                         :class="[
                             'px-3 py-1 rounded-full',
-                            page === currentPage ? 'text-secondary-900 bg-primary-200 font-semibold hover:cursor-not-allowed' : 'text-secondary-700 bg-black bg-opacity-0 hover:text-secondary-900 hover:bg-opacity-5 hover:scale-105 transition-all duration-300'
+                            page === currentPage ? 'text-secondary-900 bg-primary-200 font-semibold hover:cursor-not-allowed' : 'text-secondary-700 bg-black bg-opacity-0 hover:text-secondary-900 hover:bg-opacity-5 transition-all duration-300'
                         ]">
                         {{ page}}
                     </button>
@@ -338,16 +355,36 @@ onMounted(() => {
                 <button
                     @click="fetchMemos(currentPage + 1)"
                     :disabled="currentPage === lastPage"
-                    class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 hover:text-secondary-900 hover:bg-opacity-5 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 transition-all duration-300"
+                    :class="[currentPage === lastPage ? 'opacity-50 cursor-not-allowed' : 'hover:text-secondary-900 hover:bg-opacity-5']">
                     &gt;
                 </button>
                 <button
                     @click="fetchMemos(lastPage)"
                     :disabled="currentPage === lastPage"
-                    class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 hover:text-secondary-900 hover:bg-opacity-5 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 transition-all duration-300"
+                    :class="[currentPage === lastPage ? 'opacity-50 cursor-not-allowed' : 'hover:text-secondary-900 hover:bg-opacity-5']">
                     &gt;&gt;
                 </button>
             </div>
         </div>
     </div>
+<!--ポップアップ用-->
+    <Modal :is-open="isModalOpen">
+        <template #header>
+            削除の確認: {{ memoToDelete?.title }}
+        </template>
+        <template #body>
+            本当にこのメモを削除しますか？
+        </template>
+        <template #footer>
+            <button @click="cancelDelete" class="py-2 px-4 rounded bg-secondary-300 text-secondary-700 hover:bg-secondary-400 transition-colors">
+                キャンセル
+            </button>
+            <button @click="deleteMemo" :disabled="isDeletingAPI" class="py-2 px-4 rounded bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <span v-if="isDeletingAPI">削除中...</span>
+                <span v-else>削除</span>
+            </button>
+        </template>
+    </Modal>
 </template>
