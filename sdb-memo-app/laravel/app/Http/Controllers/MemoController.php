@@ -26,8 +26,8 @@ class MemoController extends Controller
                 'id' => $memo->id,
                 'title' => $memo->title,
                 'content' => $memo->content,
-                'created_at' => Carbon::parse($memo->created_at)->format('Y/m/d H:i:s'), //日付をCarbonを使ってフォーマット
-                'updated_at' => Carbon::parse($memo->updated_at)->format('Y/m/d H:i:s'),
+                'created_at' => Carbon::parse($memo->created_at)->timezone('Asia/Tokyo')->format('Y/m/d H:i:s'), //日付をCarbonを使ってフォーマット
+                'updated_at' => Carbon::parse($memo->updated_at)->timezone('Asia/Tokyo')->format('Y/m/d H:i:s'),
             ];
         });
         return response()->json($formattedMemos);
@@ -42,8 +42,8 @@ class MemoController extends Controller
                 'id' => $memo->id,
                 'title' => $memo->title,
                 'content' => $memo->content,
-                'created_at' => Carbon::parse($memo->created_at)->format('Y/m/d H:i:s'), //日付をCarbonを使ってフォーマット
-                'updated_at' => Carbon::parse($memo->updated_at)->format('Y/m/d H:i:s'),
+                'created_at' => Carbon::parse($memo->created_at)->timezone('Asia/Tokyo')->format('Y/m/d H:i:s'), //日付をCarbonを使ってフォーマット
+                'updated_at' => Carbon::parse($memo->updated_at)->timezone('Asia/Tokyo')->format('Y/m/d H:i:s'),
             ];
         });
         $memos->setCollection($formattedMemos);
@@ -66,7 +66,39 @@ class MemoController extends Controller
             'status' => 'success',
             'message' => 'メモが正常に保存されました。',
             'data' => $memo,
-        ], 201); //201: HTTPステータスコード:作成完了
+        ], 201); //201: HTTPステータスコード: 作成完了
+    }
+
+    public function update(Request $request, string $id): JsonResponse
+    {
+        try {
+            $memo = Memo::findOrFail($id);
+        //      リクエストのバリデーションを実行、バリデーション済みのデータを保存
+            $validatedData = $request->validate([
+                'title' => 'nullable|string|max:255',
+                'content' => 'required|string',
+            ]);
+        //      $validatedData['user_id'] = $request->user()->id;
+            $validatedData['user_id'] = 1; //上のコードの仮。ログインシステムを実装したらSanctumを活用した認証へと移行する。
+
+            $memo->update($validatedData);
+
+            $formattedMemo = [
+                'id' => $memo->id,
+                'title' => $memo->title,
+                'content' => $memo->content,
+                'created_at' => Carbon::parse($memo->created_at)->timezone('Asia/Tokyo')->format('Y/m/d H:i:s'),
+                'updated_at' => Carbon::parse($memo->updated_at)->timezone('Asia/Tokyo')->format('Y/m/d H:i:s'),
+            ];
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'メモが正常に更新されました。',
+                'data' => $formattedMemo,
+            ], 200); //200: HTTPステータスコード: 更新成功
+        } catch (Exception $e) {
+            return response()->json(['message' => 'メモが見つかりません。'], 404);
+        }
     }
 
     public function destroy(string $id): JsonResponse
@@ -77,7 +109,7 @@ class MemoController extends Controller
 
             return response()->json(['message' => 'メモが正常に削除されました。']);
         } catch (Exception $e) {
-            return response()->json(['message' => 'メモの削除に失敗しました。'], 404); //404: HTTPステータスコード: Not Found
+            return response()->json(['message' => 'メモが見つかりません。'], 404); //404: HTTPステータスコード: Not Found
         }
     }
 
@@ -90,8 +122,8 @@ class MemoController extends Controller
                 'id' => $memo->id,
                 'title' => $memo->title,
                 'content' => $memo->content,
-                'created_at' => Carbon::parse($memo->created_at)->format('Y/m/d H:i:s'), //日付をCarbonを使ってフォーマット
-                'updated_at' => Carbon::parse($memo->updated_at)->format('Y/m/d H:i:s'),
+                'created_at' => Carbon::parse($memo->created_at)->timezone('Asia/Tokyo')->format('Y/m/d H:i:s'), //日付をCarbonを使ってフォーマット
+                'updated_at' => Carbon::parse($memo->updated_at)->timezone('Asia/Tokyo')->format('Y/m/d H:i:s'),
             ];
         });
         return response()->json($formattedMemos);
@@ -105,8 +137,8 @@ class MemoController extends Controller
                 'id' => $memo->id,
                 'title' => $memo->title,
                 'content' => $memo->content,
-                'created_at' => Carbon::parse($memo->created_at)->format('Y/m/d H:i:s'), //日付をCarbonを使ってフォーマット
-                'updated_at' => Carbon::parse($memo->updated_at)->format('Y/m/d H:i:s'),
+                'created_at' => Carbon::parse($memo->created_at)->timezone('Asia/Tokyo')->format('Y/m/d H:i:s'), //日付をCarbonを使ってフォーマット
+                'updated_at' => Carbon::parse($memo->updated_at)->timezone('Asia/Tokyo')->format('Y/m/d H:i:s'),
             ];
         });
         $memos->setCollection($formattedMemos);

@@ -12,6 +12,7 @@ Route::get('/memos/all', [MemoController::class, 'indexAll']);
 Route::get('/memos/paginate', [MemoController::class, 'indexPaginate']);
 //Route::middleware('auth:sanctum')->post('/memos', [MemoController::class, 'store']);
 Route::post('/memos', [MemoController::class, 'store']); //上のコードの仮。ログインシステムを実装したらSanctumを活用した認証へと移行する。
+Route::put('/memos/{id}', [MemoController::class, 'update']);
 Route::delete('/memos/{id}', [MemoController::class, 'destroy']);
 
 // 削除したメモ用

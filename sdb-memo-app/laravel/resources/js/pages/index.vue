@@ -16,9 +16,16 @@ const memos = ref([]); //APIから取得したメモ一覧
 const expandedMemos = ref<number[]>([]); //展開されているメモカードのIDを保持
 const isFetchingAPI = ref(false);
 const isSavingAPI = ref(false);
-const isDeletingAPI = ref(false);
-const isModalOpen = ref(false);
+
+// メモ編集処理
+const isEditModalOpen = ref(false);
+const memoToEdit = ref<any | null>(null);
+const isUpdatingAPI = ref(false);
+
+// メモ削除処理
+const isDeleteModalOpen = ref(false);
 const memoToDelete = ref<any | null>(null);
+const isDeletingAPI = ref(false);
 
 // ページネーション処理
 const currentPage = ref(1);
@@ -71,14 +78,9 @@ const isContentEntered = computed(() => {
     return memoContent.value.length > 0;
 });
 
-/*
-const tempMemos = ref([
-    { id: 1, title: 'タイトル', content: 'コンテンツ', date: '2025/9/6 13:39:41' },
-    { id: 2, title: 'タイトルのないコンテンツ1行', content: 'タイトルのないコンテンツ1行', date: '2025/9/6 13:40:25' },
-    { id: 3, title: 'タイトルのないコンテンツ4行以上', content: 'タイトルのないコンテンツ4行以上\nあああ\nいいい\n4行目以降のコンテンツ', date: '2025/9/6 13:42:11' },
-    { id: 4, title: '1行が長いタイトルああああああああああああああああああああああああああああああ', content: 'Hello World aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nbbbb', date: '2025/9/6 13:44:10' },
-])
- */
+const isEditContentEntered = computed(() => {
+    return memoToEdit.value && memoToEdit.value.content && memoToEdit.value.content.length > 0;
+})
 
 // メモ取得API
 const fetchMemos = async (page = 1) => {  //ページネーション有効化時は最初のページを表示
@@ -194,6 +196,66 @@ const saveMemo = async() => {
     }
 };
 
+// メモ更新API
+const updateMemo = async() => {
+    if (!isEditContentEntered.value || isUpdatingAPI.value || memoToEdit.value === null) return;
+
+    isUpdatingAPI.value = true;
+
+    if (memoToEdit.value.title.length === 0) {
+        memoToEdit.value.title = memoToEdit.value.content.split('\n')[0];
+    }
+
+    const memoData = {
+        title: memoToEdit.value.title,
+        content: memoToEdit.value.content,
+    };
+
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'); //CSRFトークンを取得
+
+        // HTTPリクエストヘッダーを定義
+        const headers: HeadersInit = {
+            'Content-Type': 'application/json', //送信するデータの形式
+            'X-Requested-With': 'XMLHttpRequest', //LaravelがAjaxリクエストであることを認識するために必要
+        }
+        if (csrfToken) {
+            headers['X-CSRF-TOKEN'] = csrfToken; //セキュリティトークン
+        }
+
+        const response = await fetch(`/api/memos/${memoToEdit.value.id}`, {
+            method: 'PUT',
+            headers: headers,
+            body: JSON.stringify(memoData),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert(result.message);
+            await fetchMemos(currentPage.value); //新しいメモを保存後、リストを再取得し、表示画面を更新
+        } else {
+            alert(`更新に失敗しました: ${result.message || 'Unknown error'}`);
+        }
+    } catch (error) {
+        console.error('APIリクエストエラー:', error);
+        alert('メモの更新中にエラーが発生しました。');
+    } finally {
+        isUpdatingAPI.value = false;
+        cancelEdit();
+    }
+}
+
+const confirmEdit = (memo: any) => {
+    memoToEdit.value = JSON.parse(JSON.stringify(memo));
+    isEditModalOpen.value = true;
+}
+
+const cancelEdit = () => {
+    memoToEdit.value = null;
+    isEditModalOpen.value = false;
+}
+
 // メモ削除API
 const deleteMemo = async() => {
     if (isDeletingAPI.value || memoToDelete.value === null) return;
@@ -228,19 +290,18 @@ const deleteMemo = async() => {
         alert('メモの削除中にエラーが発生しました。')
     } finally {
         isDeletingAPI.value = false;
-        isModalOpen.value = false;
-        memoToDelete.value = null;
+        cancelDelete();
     }
 }
 
 const confirmDelete = (memo: any) => {
     memoToDelete.value = memo;
-    isModalOpen.value = true;
+    isDeleteModalOpen.value = true;
 }
 
 const cancelDelete = () => {
     memoToDelete.value = null;
-    isModalOpen.value = false;
+    isDeleteModalOpen.value = false;
 }
 
 onMounted(() => {
@@ -321,7 +382,7 @@ onMounted(() => {
                                 </template>
                             </IconWithText>
                         </button>
-                        <button @click.stop="" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
+                        <button @click.stop="confirmEdit(memo)" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
                             <IconWithText>
                                 <template #icon>
                                     <EditSvg class="w-4 h-4" />
@@ -400,7 +461,43 @@ onMounted(() => {
         </div>
     </div>
 <!--ポップアップ用-->
-    <Modal :is-open="isModalOpen">
+    <Modal :is-open="isEditModalOpen">
+        <template #header>
+            メモを編集: {{ memoToEdit?.title }}
+        </template>
+        <template #body>
+            <form @submit.prevent="updateMemo">
+                <div class="mb-4">
+                    <label for="editMemoTitle" class="block text-secondary-700 text-sm font-medium mb-2">
+                        タイトル
+                    </label>
+                    <input
+                        id="editMemoTitle"
+                        type="text"
+                        v-model="memoToEdit.title"
+                        class="appearance-none border rounded w-full py-2 px-3 text-secondary-700 leading-tight focus:outline-none focus:shadow-outline transition-colors border-secondary-300 focus:border-accent-800"
+                        placeholder="タイトルを入力してください…（空でも可）"
+                    />
+                </div>
+                <div class="mb-4">
+                    <label for="editMemoContent" class="block text-secondary-700 text-sm font-medium mb-2">
+                        内容
+                    </label>
+                    <TextareaForm v-model="memoToEdit.content" @saveMemo="updateMemo" />
+                </div>
+            </form>
+        </template>
+        <template #footer>
+            <button @click="cancelEdit" class="py-2 px-4 rounded bg-secondary-300 text-secondary-700 hover:bg-secondary-400 transition-colors">
+                キャンセル
+            </button>
+            <button @click="updateMemo" :disabled="!isEditContentEntered || isUpdatingAPI" class="py-2 px-4 rounded bg-primary-600 text-white hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <span v-if="isDeletingAPI">更新中...</span>
+                <span v-else>更新</span>
+            </button>
+        </template>
+    </Modal>
+    <Modal :is-open="isDeleteModalOpen">
         <template #header>
             削除の確認: {{ memoToDelete?.title }}
         </template>
