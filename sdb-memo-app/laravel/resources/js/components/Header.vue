@@ -18,9 +18,9 @@ const title = computed(() => {
             <nav>
                 <ul class="flex space-x-4">
                     <template v-if="isLoggedIn">
-                        <li><a href="/history" class="inline-block text-secondary-500 border-r border-secondary-200 pr-4 hover:text-secondary-900">
-                            履歴
-                        </a></li>
+                        <li><router-link to="/DeletedMemos" class="inline-block text-secondary-500 border-r border-secondary-200 pr-4 hover:text-secondary-900">
+                            削除されたメモ
+                        </router-link></li>
                         <li><a href="/logout" class="inline-block text-secondary-500 hover:text-secondary-900">
                             ログアウト
                         </a></li>
@@ -36,14 +36,14 @@ const title = computed(() => {
                 </ul>
             </nav>
         </div>
-        <a href="/" class="text-center no-underline">
+        <router-link to="/" class="text-center no-underline">
             <div class="flex items-center space-x-2">
                 <DocumentSvg class="w-8 h-8 text-accent-600 hover:text-accent-800" />
                 <h1 class="text-3xl font-light bg-gradient-to-r from-accent-600 to-primary-600 hover:from-accent-800 hover:to-primary-800 bg-clip-text text-transparent">
                     {{ title }}
                 </h1>
             </div>
-        </a>
+        </router-link>
     </header>
 </template>
 

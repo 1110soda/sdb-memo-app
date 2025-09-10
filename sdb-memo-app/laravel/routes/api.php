@@ -8,8 +8,14 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('/memos/paginate', [MemoController::class, 'indexPaginate']);
 Route::get('/memos/all', [MemoController::class, 'indexAll']);
+Route::get('/memos/paginate', [MemoController::class, 'indexPaginate']);
 //Route::middleware('auth:sanctum')->post('/memos', [MemoController::class, 'store']);
 Route::post('/memos', [MemoController::class, 'store']); //上のコードの仮。ログインシステムを実装したらSanctumを活用した認証へと移行する。
 Route::delete('/memos/{id}', [MemoController::class, 'destroy']);
+
+// 削除したメモ用
+Route::get('/memos/deleted/all', [MemoController::class, 'deletedIndexAll']);
+Route::get('/memos/deleted/paginate', [MemoController::class, 'deletedIndexPaginate']);
+Route::patch('/memos/deleted/restore/{id}', [MemoController::class, 'restore']);
+Route::delete('/memos/deleted/{id}', [MemoController::class, 'permanentlyDestroy']);

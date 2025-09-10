@@ -1,21 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import DocumentSvg from "../components/svgs/DocumentSvg.vue";
-import PlusSvg from "../components/svgs/PlusSvg.vue";
 import TrashSvg from "../components/svgs/TrashSvg.vue";
-import EditSvg from "../components/svgs/EditSvg.vue";
-import StatusSvg from "../components/svgs/StatusSvg.vue";
-import TextareaForm from "../components/TextareaForm.vue";
-import Button from "../components/Button.vue";
 import Modal from "../components/Modal.vue";
-import IconWithText from "@/components/IconWithText.vue";
+import RestoreSvg from "../components/svgs/RestoreSvg.vue";
+import IconWithText from "../components/IconWithText.vue";
 
-const memoTitle = ref('');
-const memoContent = ref('');
-const memos = ref([]); //APIから取得したメモ一覧
+const deletedMemos = ref([]);
 const expandedMemos = ref<number[]>([]); //展開されているメモカードのIDを保持
 const isFetchingAPI = ref(false);
-const isSavingAPI = ref(false);
+const isRestoringAPI = ref(false);
 const isDeletingAPI = ref(false);
 const isModalOpen = ref(false);
 const memoToDelete = ref<any | null>(null);
@@ -33,7 +27,7 @@ const displayMemoCount = computed(() => {
             return '0 件';
         }
         const start = (currentPage.value - 1) * itemsPerPage + 1;
-        const end = start + memos.value.length - 1;
+        const end = start + deletedMemos.value.length - 1;
         if (start === end) {
             return `${start} / ${totalMemosCount.value} 件`;
         } else {
@@ -67,21 +61,8 @@ const displayedPages = computed(() => {
     return pages;
 })
 
-const isContentEntered = computed(() => {
-    return memoContent.value.length > 0;
-});
-
-/*
-const tempMemos = ref([
-    { id: 1, title: 'タイトル', content: 'コンテンツ', date: '2025/9/6 13:39:41' },
-    { id: 2, title: 'タイトルのないコンテンツ1行', content: 'タイトルのないコンテンツ1行', date: '2025/9/6 13:40:25' },
-    { id: 3, title: 'タイトルのないコンテンツ4行以上', content: 'タイトルのないコンテンツ4行以上\nあああ\nいいい\n4行目以降のコンテンツ', date: '2025/9/6 13:42:11' },
-    { id: 4, title: '1行が長いタイトルああああああああああああああああああああああああああああああ', content: 'Hello World aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nbbbb', date: '2025/9/6 13:44:10' },
-])
- */
-
-// メモ取得API
-const fetchMemos = async (page = 1) => {  //ページネーション有効化時は最初のページを表示
+// 削除されたメモ取得API
+const fetchDeletedMemos = async (page = 1) => {  //ページネーション有効化時は最初のページを表示
     if (isFetchingAPI.value) return;
 
     isFetchingAPI.value = true;
@@ -89,21 +70,21 @@ const fetchMemos = async (page = 1) => {  //ページネーション有効化時
     try {
         let url = '';
         if (isPaginationEnabled.value) {
-            url = `/api/memos/paginate?page=${page}`;
+            url = `/api/memos/deleted/paginate?page=${page}`;
         } else {
-            url = '/api/memos/all';
+            url = '/api/memos/deleted/all';
         }
         const response = await fetch(url);
         const result = await response.json();
 
         if (response.ok) {
             if (isPaginationEnabled.value) {
-                memos.value = result.data;
+                deletedMemos.value = result.data;
                 currentPage.value = result.current_page;
                 lastPage.value = result.last_page;
                 totalMemosCount.value = result.total;
             } else {
-                memos.value = result;
+                deletedMemos.value = result;
                 // 全件表示時はページネーション情報をクリア
                 currentPage.value = 1;
                 lastPage.value = 1;
@@ -111,13 +92,13 @@ const fetchMemos = async (page = 1) => {  //ページネーション有効化時
             }
         } else {
             alert(`メモの取得に失敗しました: ${result.message || 'Unknown error'}`);
-            memos.value = []; //エラー時にメモリストをクリア
+            deletedMemos.value = []; //エラー時にメモリストをクリア
             totalMemosCount.value = 0;
         }
     } catch (error) {
         console.error('APIリクエストエラー:', error);
         alert('メモの取得中にエラーが発生しました。');
-        memos.value = [];
+        deletedMemos.value = [];
         totalMemosCount.value = 0;
     } finally {
         isFetchingAPI.value = false;
@@ -126,7 +107,7 @@ const fetchMemos = async (page = 1) => {  //ページネーション有効化時
 
 const togglePagination = () => {
     isPaginationEnabled.value = !isPaginationEnabled.value;
-    fetchMemos();
+    fetchDeletedMemos();
 }
 
 // メモカードのIDがexpandedMemosに存在すれば削除し、しないなら追加する
@@ -143,58 +124,44 @@ const isExpanded = (id: number) => {
     return expandedMemos.value.includes(id);
 }
 
-// メモ保存API
-const saveMemo = async() => {
-    if (!isContentEntered.value || isSavingAPI.value) return;
+// メモ復元API
+const restoreMemo = async(id: number) => {
+    if (isRestoringAPI.value) return;
 
-    isSavingAPI.value = true;
-
-    if (memoTitle.value.length === 0) {
-        memoTitle.value = memoContent.value.split('\n')[0]; // タイトル欄に入力がない場合、メモ内容の最初の行を見出しとして表示する。
-    }
-
-    const memoData = {
-        title: memoTitle.value,
-        content: memoContent.value,
-    };
+    isRestoringAPI.value = true;
 
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'); //CSRFトークンを取得
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-        // HTTPリクエストヘッダーを定義
         const headers: HeadersInit = {
-            'Content-Type': 'application/json', //送信するデータの形式
-            'X-Requested-With': 'XMLHttpRequest', //LaravelがAjaxリクエストであることを認識するために必要
+            'X-Requested-With': 'XMLHttpRequest',
         }
         if (csrfToken) {
-            headers['X-CSRF-TOKEN'] = csrfToken; //セキュリティトークン
+            headers['X-CSRF-Token'] = csrfToken;
         }
 
-        const response = await fetch('/api/memos', {
-            method: 'POST',
+        const response = await fetch(`/api/memos/deleted/restore/${id}`, {
+            method: 'PATCH',
             headers: headers,
-            body: JSON.stringify(memoData),
         });
 
         const result = await response.json();
 
         if (response.ok) {
             alert(result.message);
-            memoTitle.value = '';
-            memoContent.value = '';
-            await fetchMemos(currentPage.value); //新しいメモを保存後、リストを再取得し、表示画面を更新
+            await fetchDeletedMemos(currentPage.value);
         } else {
-            alert(`保存に失敗しました: ${result.message || 'Unknown error'}`);
+            alert(`復元に失敗しました: ${result.message || 'Unknown error'}`);
         }
     } catch (error) {
         console.error('APIリクエストエラー:', error);
-        alert('メモの保存中にエラーが発生しました。');
+        alert('メモの復元中にエラーが発生しました。');
     } finally {
-        isSavingAPI.value = false;
+        isRestoringAPI.value = false;
     }
 };
 
-// メモ削除API
+// メモ完全削除API
 const deleteMemo = async() => {
     if (isDeletingAPI.value || memoToDelete.value === null) return;
 
@@ -210,7 +177,7 @@ const deleteMemo = async() => {
             headers['X-CSRF-TOKEN'] = csrfToken;
         }
 
-        const response = await fetch(`/api/memos/${memoToDelete.value.id}`, {
+        const response = await fetch(`/api/memos/deleted/${memoToDelete.value.id}`, {
             method: 'DELETE',
             headers: headers,
         });
@@ -219,7 +186,7 @@ const deleteMemo = async() => {
 
         if (response.ok) {
             alert(result.message);
-            await fetchMemos(currentPage.value);
+            await fetchDeletedMemos(currentPage.value);
         } else {
             alert(`削除に失敗しました: ${result.message || 'Unknown error'}`);
         }
@@ -244,52 +211,18 @@ const cancelDelete = () => {
 }
 
 onMounted(() => {
-    fetchMemos();
+    fetchDeletedMemos();
 });
 </script>
 
 <template>
     <div class="p-4 md:p-8 flex justify-center items-start min-h-screen">
         <div class="w-full max-w-lg flex flex-col space-y-8">
-            <div class="bg-white p-6 rounded-lg shadow-lg hover:scale-105 hover:shadow-secondary-400 transition-all duration-300">
-                <div class="flex items-center space-x-2 mb-6">
-                    <PlusSvg class="w-6 h-6 text-accent-800" />
-                    <h2 class="text-xl font-medium text-secondary-900">
-                        新しいメモ
-                    </h2>
-                </div>
-
-                <form @submit.prevent="saveMemo">
-                    <div class="mb-4">
-                        <label for="memoTitle" class="block text-secondary-700 text-sm font-medium mb-2">
-                            タイトル
-                        </label>
-                        <input
-                            id="memoTitle"
-                            type="text"
-                            v-model="memoTitle"
-                            class="appearance-none border rounded w-full py-2 px-3 text-secondary-700 leading-tight focus:outline-none focus:shadow-outline transition-colors border-secondary-300 focus:border-accent-800"
-                            placeholder="タイトルを入力してください…（空でも可）"
-                        />
-                    </div>
-                    <div class="mb-4">
-                        <label for="memoContent" class="block text-secondary-700 text-sm font-medium mb-2">
-                            内容
-                        </label>
-                        <TextareaForm v-model="memoContent" @saveMemo="saveMemo" />
-                    </div>
-                    <div class="flex justify-end">
-                        <Button type="submit" :disabled="!isContentEntered">
-                            + メモを保存
-                        </Button>
-                    </div>
-                </form>
-            </div>
             <div class="flex justify-between items-center mb-6">
                 <div class="flex items-center space-x-2">
                     <DocumentSvg class="w-6 h-6 text-accent-800" />
                     <h2 class="text-xl font-medium text-secondary-900">
-                        保存されたメモ
+                        削除されたメモ
                     </h2>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -303,41 +236,33 @@ onMounted(() => {
                 </div>
             </div>
             <div v-if="isFetchingAPI" class="text-secondary-900 text-center">
-                メモを取得中...
+                削除済みのメモを取得中...
             </div>
             <div v-else class="grid gap-4">
-                <p v-if="memos.length === 0" class="text-secondary-900 text-center">
-                    まだメモがありません。
+                <p v-if="deletedMemos.length === 0" class="text-secondary-900 text-center">
+                    まだ削除済みのメモがありません。
                 </p>
-                <div v-for="memo in memos" :key="memo.id" @click="toggleExpand(memo.id)" class="group relative bg-white min-w-0 p-4 rounded-lg shadow-lg cursor-pointer hover:scale-105 hover:shadow-secondary-400 transition-all duration-300">
+                <div v-for="memo in deletedMemos" :key="memo.id" @click="toggleExpand(memo.id)" class="group relative bg-white min-w-0 p-4 rounded-lg shadow-lg cursor-pointer hover:scale-105 hover:shadow-secondary-400 transition-all duration-300">
                     <div class="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                        <button @click.stop="" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
+                        <button @click.stop="restoreMemo(memo.id)" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
                             <IconWithText>
                                 <template #icon>
-                                    <StatusSvg class="w-4 h-4" />
+                                    <RestoreSvg class="w-full h-full" />
                                 </template>
                                 <template #text>
-                                    タグ
+                                    <span>復元</span>
                                 </template>
                             </IconWithText>
                         </button>
-                        <button @click.stop="" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
-                            <IconWithText>
-                                <template #icon>
-                                    <EditSvg class="w-4 h-4" />
-                                </template>
-                                <template #text>
-                                    編集
-                                </template>
-                            </IconWithText>
-                        </button>
-                        <button @click.stop="confirmDelete(memo)" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
+                        <button @click.stop="confirmDelete(memo)" class="text-red-600 hover:text-red-700 hover:bg-red-100 rounded-full p-2 transition-colors">
                             <IconWithText>
                                 <template #icon>
                                     <TrashSvg class="w-4 h-4" />
                                 </template>
                                 <template #text>
-                                    削除
+                                    <span>
+                                        削除
+                                    </span>
                                 </template>
                             </IconWithText>
                         </button>
@@ -355,14 +280,14 @@ onMounted(() => {
             </div>
             <div v-if="isPaginationEnabled && lastPage > 1" class="mt-8 flex justify-center items-center space-x-2">
                 <button
-                    @click="fetchMemos()"
+                    @click="fetchDeletedMemos()"
                     :disabled="currentPage === 1"
                     class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 transition-all duration-300"
                     :class="[currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:text-secondary-900 hover:bg-opacity-5']">
                     &lt;&lt;
                 </button>
                 <button
-                    @click="fetchMemos(currentPage - 1)"
+                    @click="fetchDeletedMemos(currentPage - 1)"
                     :disabled="currentPage === 1"
                     class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 transition-all duration-300"
                     :class="[currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:text-secondary-900 hover:bg-opacity-5']">
@@ -371,7 +296,7 @@ onMounted(() => {
                 <template v-for="page in displayedPages" :key="page">
                     <button
                         v-if="page !== '...'"
-                        @click="fetchMemos(Number(page))"
+                        @click="fetchDeletedMemos(Number(page))"
                         :class="[
                             'px-3 py-1 rounded-full',
                             page === currentPage ? 'text-secondary-900 bg-primary-200 font-semibold hover:cursor-not-allowed' : 'text-secondary-700 bg-black bg-opacity-0 hover:text-secondary-900 hover:bg-opacity-5 transition-all duration-300'
@@ -383,14 +308,14 @@ onMounted(() => {
                     </span>
                 </template>
                 <button
-                    @click="fetchMemos(currentPage + 1)"
+                    @click="fetchDeletedMemos(currentPage + 1)"
                     :disabled="currentPage === lastPage"
                     class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 transition-all duration-300"
                     :class="[currentPage === lastPage ? 'opacity-50 cursor-not-allowed' : 'hover:text-secondary-900 hover:bg-opacity-5']">
                     &gt;
                 </button>
                 <button
-                    @click="fetchMemos(lastPage)"
+                    @click="fetchDeletedMemos(lastPage)"
                     :disabled="currentPage === lastPage"
                     class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 transition-all duration-300"
                     :class="[currentPage === lastPage ? 'opacity-50 cursor-not-allowed' : 'hover:text-secondary-900 hover:bg-opacity-5']">
@@ -399,13 +324,13 @@ onMounted(() => {
             </div>
         </div>
     </div>
-<!--ポップアップ用-->
+    <!--ポップアップ用-->
     <Modal :is-open="isModalOpen">
         <template #header>
-            削除の確認: {{ memoToDelete?.title }}
+            完全削除の確認: {{ memoToDelete?.title }}
         </template>
         <template #body>
-            本当にこのメモを削除しますか？
+            完全削除したメモは復元できません。本当にこのメモを削除しますか？
         </template>
         <template #footer>
             <button @click="cancelDelete" class="py-2 px-4 rounded bg-secondary-300 text-secondary-700 hover:bg-secondary-400 transition-colors">
@@ -413,7 +338,7 @@ onMounted(() => {
             </button>
             <button @click="deleteMemo" :disabled="isDeletingAPI" class="py-2 px-4 rounded bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 <span v-if="isDeletingAPI">削除中...</span>
-                <span v-else>削除</span>
+                <span v-else>完全削除</span>
             </button>
         </template>
     </Modal>
