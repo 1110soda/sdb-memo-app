@@ -2,7 +2,7 @@
     defineProps({
         disabled: {
             type: Boolean,
-            default: true
+            default: false
         }
     });
 </script>

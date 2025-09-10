@@ -13,37 +13,37 @@ const title = computed(() => {
 </script>
 
 <template>
-    <header class="p-4 flex flex-col items-center border-b bg-white border-secondary-200 shadow-lg pb-6">
+    <header class="p-4 flex flex-col items-center border-b bg-white border-secondary-200 shadow-lg pb-6 transition-colors duration-300">
         <div class="w-full flex justify-end mb-2">
             <nav>
                 <ul class="flex space-x-4">
                     <template v-if="isLoggedIn">
-                        <li><a href="/history" class="inline-block text-secondary-500 border-r border-secondary-200 pr-4 hover:text-secondary-900 hover:scale-105 transition-all duration-300">
-                            履歴
-                        </a></li>
-                        <li><a href="/logout" class="inline-block text-secondary-500 hover:text-secondary-900 hover:scale-105 transition-all duration-300">
+                        <li><router-link to="/DeletedMemos" class="inline-block text-secondary-500 border-r border-secondary-200 pr-4 hover:text-secondary-900">
+                            削除されたメモ
+                        </router-link></li>
+                        <li><a href="/logout" class="inline-block text-secondary-500 hover:text-secondary-900">
                             ログアウト
                         </a></li>
                     </template>
                     <template v-else>
-                        <li><a href="/createUser" class="inline-block text-secondary-500 border-r border-secondary-200 pr-4 hover:text-secondary-900 hover:scale-105 transition-all duration-300">
+                        <li><a href="/createUser" class="inline-block text-secondary-500 border-r border-secondary-200 pr-4 hover:text-secondary-900">
                             新規登録
                         </a></li>
-                        <li><a href="/login" class="inline-block text-secondary-500 hover:text-secondary-900 hover:scale-105 transition-all duration-300">
+                        <li><a href="/login" class="inline-block text-secondary-500 hover:text-secondary-900">
                             ログイン
                         </a></li>
                     </template>
                 </ul>
             </nav>
         </div>
-        <a href="/" class="text-center no-underline">
-            <div class="flex items-center space-x-2 hover:hover:scale-105 transition-all duration-300">
-                <DocumentSvg class="w-8 h-8 text-accent-600" />
-                <h1 class="text-3xl font-light bg-gradient-to-r from-accent-600 to-primary-600 bg-clip-text text-transparent">
+        <router-link to="/" class="text-center no-underline">
+            <div class="flex items-center space-x-2">
+                <DocumentSvg class="w-8 h-8 text-accent-600 hover:text-accent-800" />
+                <h1 class="text-3xl font-light bg-gradient-to-r from-accent-600 to-primary-600 hover:from-accent-800 hover:to-primary-800 bg-clip-text text-transparent">
                     {{ title }}
                 </h1>
             </div>
-        </a>
+        </router-link>
     </header>
 </template>
 
