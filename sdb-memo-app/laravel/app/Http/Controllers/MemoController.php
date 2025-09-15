@@ -6,8 +6,9 @@ use App\Models\Memo;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class MemoController extends Controller
 {
@@ -21,7 +22,7 @@ class MemoController extends Controller
     public function indexAll(): JsonResponse
     {
         //      メモを更新日時順に並べ、JSONレスポンスとして返す
-        $memos = Memo::with('categories')->orderBy('updated_at', 'desc')->get(); //すべてのメモを取得
+        $memos = Memo::where('user_id', Auth::id())->with('categories')->orderBy('updated_at', 'desc')->get(); //すべてのメモを取得
         $formattedMemos = $memos->map(function ($memo) {
             return [
                 'id' => $memo->id,
@@ -45,7 +46,7 @@ class MemoController extends Controller
     public function indexPaginate(): JsonResponse
     {
 //      メモを更新日時順に並べ、JSONレスポンスとして返す
-        $memos = Memo::with('categories')->orderBy('updated_at', 'desc')->paginate(5); //1ページあたり5件のメモを取得
+        $memos = Memo::where('user_id', Auth::id())->with('categories')->orderBy('updated_at', 'desc')->paginate(5); //1ページあたり5件のメモを取得
         $formattedMemos = $memos->getCollection()->map(function ($memo) {
             return [
                 'id' => $memo->id,
@@ -77,8 +78,7 @@ class MemoController extends Controller
             'category_ids.*' => 'exists:categories,id', //各IDがCategoriesテーブルに存在するか
             'deadline_at' => 'nullable|date_format:Y-m-d',
         ]);
-//      $validatedData['user_id'] = $request->user()->id;
-        $validatedData['user_id'] = 1; //上のコードの仮。ログインシステムを実装したらSanctumを活用した認証へと移行する。
+        $validatedData['user_id'] = $request->user()->id;
 
 //      deadline_atをJSTとして受け取り、UTCに変換して保存
         if (isset($validatedData['deadline_at'])) {
@@ -121,6 +121,10 @@ class MemoController extends Controller
     {
         try {
             $memo = Memo::findOrFail($id);
+
+            if ($memo->user_id !== Auth::id()) {
+                return response()->json(['message' => '権限がありません。'], 403); //403: HTTPステータスコード: Forbidden
+            }
         //      リクエストのバリデーションを実行、バリデーション済みのデータを保存
             $validatedData = $request->validate([
                 'title' => 'nullable|string|max:255',
@@ -129,8 +133,7 @@ class MemoController extends Controller
                 'category_ids.*' => 'exists:categories,id',
                 'deadline_at' => 'nullable|date_format:Y-m-d',
             ]);
-        //      $validatedData['user_id'] = $request->user()->id;
-            $validatedData['user_id'] = 1; //上のコードの仮。ログインシステムを実装したらSanctumを活用した認証へと移行する。
+            $validatedData['user_id'] = $request->user()->id;
 
             if (isset($validatedData['deadline_at'])) {
                 $validatedData['deadline_at'] = Carbon::createFromFormat('Y-m-d', $validatedData['deadline_at'], 'Asia/Tokyo')->utc();
@@ -173,10 +176,15 @@ class MemoController extends Controller
     {
         try {
             $memo = Memo::findOrFail($id);
+
+            if ($memo->user_id !== Auth::id()) {
+                return response()->json(['message' => '権限がありません。'], 403); //403: HTTPステータスコード: Forbidden
+            }
+
             $memo->delete();
 
             return response()->json(['message' => 'メモが正常に削除されました。']);
-        } catch (\Exception $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json(['message' => 'メモが見つかりません。'], 404); //404: HTTPステータスコード: Not Found
         }
     }
@@ -184,7 +192,7 @@ class MemoController extends Controller
 //  削除したメモ用
     public function deletedIndexAll(): JsonResponse
     {
-        $memos = Memo::onlyTrashed()->with('categories')->orderBy('updated_at', 'desc')->get(); //すべての削除されたメモを取得
+        $memos = Memo::onlyTrashed()->where('user_id', Auth::id())->with('categories')->orderBy('updated_at', 'desc')->get(); //すべての削除されたメモを取得
         $formattedMemos = $memos->map(function ($memo) {
             return [
                 'id' => $memo->id,
@@ -207,7 +215,7 @@ class MemoController extends Controller
 
     public function deletedIndexPaginate(): JsonResponse
     {
-        $memos = Memo::onlyTrashed()->with('categories')->orderBy('updated_at', 'desc')->paginate(5); //1ページあたり5件のメモを取得
+        $memos = Memo::onlyTrashed()->where('user_id', Auth::id())->with('categories')->orderBy('updated_at', 'desc')->paginate(5); //1ページあたり5件のメモを取得
         $formattedMemos = $memos->getCollection()->map(function ($memo) {
             return [
                 'id' => $memo->id,
@@ -233,9 +241,14 @@ class MemoController extends Controller
     {
         try {
             $memo = Memo::onlyTrashed()->findOrFail($id);
+
+            if ($memo->user_id !== Auth::id()) {
+                return response()->json(['message' => '権限がありません。'], 403); //403: HTTPステータスコード: Forbidden
+            }
+
             $memo->restore();
             return response()->json(['message' => 'メモが正常に復元されました。']);
-        } catch (\Exception $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json(['message' => 'メモが見つかりません。'], 404);
         }
     }
@@ -244,9 +257,14 @@ class MemoController extends Controller
     {
         try {
             $memo = Memo::onlyTrashed()->findOrFail($id);
+
+            if ($memo->user_id !== Auth::id()) {
+                return response()->json(['message' => '権限がありません。'], 403); //403: HTTPステータスコード: Forbidden
+            }
+
             $memo->forceDelete();
             return response()->json(['message' => 'メモが完全に削除されました。']);
-        } catch (\Exception $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json(['message' => 'メモが見つかりません。'], 404);
         }
     }
