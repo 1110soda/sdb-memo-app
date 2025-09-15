@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import DocumentSvg from "../components/svgs/DocumentSvg.vue";
 import PlusSvg from "../components/svgs/PlusSvg.vue";
 import TrashSvg from "../components/svgs/TrashSvg.vue";
@@ -50,6 +50,15 @@ const memoToCategorize = ref<Memo | null>(null);
 const availableCategories = ref<Category[]>([]);
 const selectedCategoryIds = ref<number[]>([]); //モーダルで選択中のカテゴリーID
 const modalDeadlineAt = ref<string | null>(null); //モーダルで設定中の期日
+
+// メモのタグに期日が選択されていない場合、設定されていた期日をクリアする
+watch(selectedCategoryIds, (newIds) => {
+    const deadlineCategory = availableCategories.value.find(cat => cat.name === '期限付き');
+
+    if (deadlineCategory && !newIds.includes(deadlineCategory.id)) {
+        modalDeadlineAt.value = null;
+    }
+});
 
 // ページネーション処理
 const currentPage = ref(1);
@@ -397,7 +406,7 @@ const handleCategorySave = async() => {
 const confirmCategorize = (memo: Memo) => {
     memoToCategorize.value = JSON.parse(JSON.stringify(memo));
     selectedCategoryIds.value = memo.categories ? memo.categories.map(cat => cat.id) : [];
-    modalDeadlineAt.value = memo.deadline_at;
+    modalDeadlineAt.value = memo.deadline_at ? memo.deadline_at.replace(/\//g, '-') : null;
     isCategoryModalOpen.value = true;
 };
 
@@ -414,20 +423,17 @@ const getCardBorderStyle = (memo: Memo) => {
 
         if (colors.length === 1) {
             return {
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                borderColor: colors[0],
+                border: `1px solid ${colors[0]}`,
             };
         } else {
             const gradientColors = colors.join(', ');
             return {
-                borderWidth: `${colors.length}px`,
-                borderStyle: 'solid',
-                borderImage: `linear-gradient(to right, ${gradientColors}) 1`,
+                border: `1px solid transparent`,
+                background: `linear-gradient(white, white) padding-box, linear-gradient(to right, ${gradientColors}) border-box`,
             };
         }
     }
-    return { borderWidth: '0px' };
+    return {};
 };
 
 onMounted(() => {
