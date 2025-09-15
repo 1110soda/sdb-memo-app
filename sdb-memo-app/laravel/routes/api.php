@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MemoController;
@@ -20,3 +21,6 @@ Route::get('/memos/deleted/all', [MemoController::class, 'deletedIndexAll']);
 Route::get('/memos/deleted/paginate', [MemoController::class, 'deletedIndexPaginate']);
 Route::patch('/memos/deleted/restore/{id}', [MemoController::class, 'restore']);
 Route::delete('/memos/deleted/{id}', [MemoController::class, 'permanentlyDestroy']);
+
+// Categoryに関するルート
+Route::get('/categories', [CategoryController::class, 'index']);
