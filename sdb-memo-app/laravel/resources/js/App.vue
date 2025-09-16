@@ -30,7 +30,7 @@ const { user } = useAuth();
 const route = useRoute();
 
 const isPublicPage = computed(() => {
-    const publicPaths = ['/login']; //, '/createUser'
+    const publicPaths = ['/login', '/createUser'];
     return publicPaths.includes(route.path);
 });
 </script>
