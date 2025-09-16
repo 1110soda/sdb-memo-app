@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
+import axios from "../lib/axios";
 import DocumentSvg from "../components/svgs/DocumentSvg.vue";
 import PlusSvg from "../components/svgs/PlusSvg.vue";
 import TrashSvg from "../components/svgs/TrashSvg.vue";
@@ -124,30 +125,24 @@ const fetchMemos = async(page = 1) => {  //ページネーション有効化時�
     try {
         let url = '';
         if (isPaginationEnabled.value) {
-            url = `/api/memos/paginate?page=${page}`;
+            url = `/memos/paginate?page=${page}`;
         } else {
-            url = '/api/memos/all';
+            url = '/memos/all';
         }
-        const response = await fetch(url);
-        const result = await response.json();
+        const response = await axios.get(url);
+        const result = response.data;
 
-        if (response.ok) {
-            if (isPaginationEnabled.value) {
-                memos.value = result.data;
-                currentPage.value = result.current_page;
-                lastPage.value = result.last_page;
-                totalMemosCount.value = result.total;
-            } else {
-                memos.value = result;
-                // 全件表示時はページネーション情報をクリア
-                currentPage.value = 1;
-                lastPage.value = 1;
-                totalMemosCount.value = result.length;
-            }
+        if (isPaginationEnabled.value) {
+            memos.value = result.data;
+            currentPage.value = result.current_page;
+            lastPage.value = result.last_page;
+            totalMemosCount.value = result.total;
         } else {
-            alert(`メモの取得に失敗しました: ${result.message || 'Unknown error'}`);
-            memos.value = []; //エラー時にメモリストをクリア
-            totalMemosCount.value = 0;
+            memos.value = result;
+            // 全件表示時はページネーション情報をクリア
+            currentPage.value = 1;
+            lastPage.value = 1;
+            totalMemosCount.value = result.length;
         }
     } catch (error) {
         console.error('APIリクエストエラー:', error);
@@ -196,36 +191,18 @@ const saveMemo = async() => {
     };
 
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'); //CSRFトークンを取得
-
-        // HTTPリクエストヘッダーを定義
-        const headers: HeadersInit = {
-            'Content-Type': 'application/json', //送信するデータの形式
-            'X-Requested-With': 'XMLHttpRequest', //LaravelがAjaxリクエストであることを認識するために必要
-        }
-        if (csrfToken) {
-            headers['X-CSRF-TOKEN'] = csrfToken; //セキュリティトークン
-        }
-
-        const response = await fetch('/api/memos', {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(memoData),
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            alert(result.message);
-            memoTitle.value = '';
-            memoContent.value = '';
-            await fetchMemos(currentPage.value); //新しいメモを保存後、リストを再取得し、表示画面を更新
+        const response = await axios.post('/memos', memoData);
+        alert(response.data.message);
+        memoTitle.value = '';
+        memoContent.value = '';
+        await fetchMemos(currentPage.value); //新しいメモを保存後、リストを再取得し、表示画面を更新
+    } catch (error: any) {
+        if (error.response && error.response.status === 422) {
+            alert(Object.values(error.response.data.errors).flat().join('\n'));
         } else {
-            alert(`保存に失敗しました: ${result.message || 'Unknown error'}`);
+            alert('メモの保存中にエラーが発生しました。');
         }
-    } catch (error) {
         console.error('APIリクエストエラー:', error);
-        alert('メモの保存中にエラーが発生しました。');
     } finally {
         isSavingAPI.value = false;
     }
@@ -249,34 +226,16 @@ const updateMemo = async() => {
     };
 
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'); //CSRFトークンを取得
-
-        // HTTPリクエストヘッダーを定義
-        const headers: HeadersInit = {
-            'Content-Type': 'application/json', //送信するデータの形式
-            'X-Requested-With': 'XMLHttpRequest', //LaravelがAjaxリクエストであることを認識するために必要
-        }
-        if (csrfToken) {
-            headers['X-CSRF-TOKEN'] = csrfToken; //セキュリティトークン
-        }
-
-        const response = await fetch(`/api/memos/${memoToEdit.value.id}`, {
-            method: 'PUT',
-            headers: headers,
-            body: JSON.stringify(memoData),
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            alert(result.message);
-            await fetchMemos(currentPage.value); //新しいメモを保存後、リストを再取得し、表示画面を更新
+        const response = await axios.put(`/memos/${memoToEdit.value.id}`, memoData);
+        alert(response.data.message);
+        await fetchMemos(currentPage.value); //新しいメモを保存後、リストを再取得し、表示画面を更新
+    } catch (error: any) {
+        if (error.response && error.response.status === 422) {
+            alert(Object.values(error.response.data.errors).flat().join('\n'));
         } else {
-            alert(`更新に失敗しました: ${result.message || 'Unknown error'}`);
+            alert('メモの更新中にエラーが発生しました。');
         }
-    } catch (error) {
         console.error('APIリクエストエラー:', error);
-        alert('メモの更新中にエラーが発生しました。');
     } finally {
         isUpdatingAPI.value = false;
         cancelEdit();
@@ -300,28 +259,9 @@ const deleteMemo = async() => {
     isDeletingAPI.value = true;
 
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-        const headers: HeadersInit = {
-            'X-Requested-With': 'XMLHttpRequest',
-        }
-        if (csrfToken) {
-            headers['X-CSRF-TOKEN'] = csrfToken;
-        }
-
-        const response = await fetch(`/api/memos/${memoToDelete.value.id}`, {
-            method: 'DELETE',
-            headers: headers,
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            alert(result.message);
-            await fetchMemos(currentPage.value);
-        } else {
-            alert(`削除に失敗しました: ${result.message || 'Unknown error'}`);
-        }
+        const response = await axios.delete(`/memos/${memoToDelete.value.id}`);
+        alert(response.data.message);
+        await fetchMemos(currentPage.value);
     } catch (error) {
         console.error('APIリクエストエラー:', error);
         alert('メモの削除中にエラーが発生しました。')
@@ -343,14 +283,8 @@ const cancelDelete = () => {
 
 const fetchCategories = async() => {
     try {
-        const response = await fetch('/api/categories');
-        const result = await response.json();
-
-        if (response.ok) {
-            availableCategories.value = result.data;
-        } else {
-            console.error('カテゴリーの取得に失敗しました:', result.message || 'Unknown error');
-        }
+        const response = await axios.get('/categories');
+        availableCategories.value = response.data.data;
     } catch (error) {
         console.error('APIリクエストエラー:', error);
     }
@@ -369,34 +303,16 @@ const handleCategorySave = async() => {
     };
 
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'); //CSRFトークンを取得
-
-        // HTTPリクエストヘッダーを定義
-        const headers: HeadersInit = {
-            'Content-Type': 'application/json', //送信するデータの形式
-            'X-Requested-With': 'XMLHttpRequest', //LaravelがAjaxリクエストであることを認識するために必要
-        }
-        if (csrfToken) {
-            headers['X-CSRF-TOKEN'] = csrfToken; //セキュリティトークン
-        }
-
-        const response = await fetch(`/api/memos/${memoToCategorize.value.id}`, {
-            method: 'PUT',
-            headers: headers,
-            body: JSON.stringify(memoData),
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            alert(result.message);
-            await fetchMemos(currentPage.value); //新しいメモを保存後、リストを再取得し、表示画面を更新
+        const response = await axios.put(`/memos/${memoToCategorize.value.id}`, memoData);
+        alert(response.data.message);
+        await fetchMemos(currentPage.value); //新しいメモを保存後、リストを再取得し、表示画面を更新
+    } catch (error: any) {
+        if (error.response && error.response.status === 422) {
+            alert(Object.values(error.response.data.errors).flat().join('\n'));
         } else {
-            alert(`カテゴリー設定の更新に失敗しました: ${result.message || 'Unknown error'}`);
+            alert('カテゴリー設定の更新中にエラーが発生しました。');
         }
-    } catch (error) {
         console.error('APIリクエストエラー:', error);
-        alert('カテゴリー設定の更新中にエラーが発生しました。');
     } finally {
         isUpdatingAPI.value = false;
         cancelCategorize();

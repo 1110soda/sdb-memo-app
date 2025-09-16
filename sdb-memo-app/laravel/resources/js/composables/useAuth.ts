@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import axios from 'axios';
+import axios from '../lib/axios';
 
 interface User {
     id: number;
@@ -14,7 +14,7 @@ export function useAuth() {
         if (user.value) return;
 
         try {
-            const response = await axios.get('/api/user');
+            const response = await axios.get('/user');
             user.value = response.data;
         } catch (error) {
             user.value = null;
@@ -23,7 +23,7 @@ export function useAuth() {
 
     const logout = async() => {
         try {
-            await axios.post('/api/logout');
+            await axios.post('/logout');
             user.value = null;
         } catch (error) {
             console.error('Logout failed:', error);
