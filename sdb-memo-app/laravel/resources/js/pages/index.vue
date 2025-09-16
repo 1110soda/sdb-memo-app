@@ -423,12 +423,12 @@ const getCardBorderStyle = (memo: Memo) => {
 
         if (colors.length === 1) {
             return {
-                border: `1px solid ${colors[0]}`,
+                border: `2px solid ${colors[0]}`,
             };
         } else {
             const gradientColors = colors.join(', ');
             return {
-                border: `1px solid transparent`,
+                border: `2px solid transparent`,
                 background: `linear-gradient(white, white) padding-box, linear-gradient(to right, ${gradientColors}) border-box`,
             };
         }

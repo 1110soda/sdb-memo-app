@@ -1,15 +1,23 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import DocumentSvg from './svgs/DocumentSvg.vue';
+import { useAuth } from '../composables/useAuth';
+import { useRouter } from 'vue-router';
 
-const props = defineProps({
-    isLoggedIn: Boolean,
-    userName: String,
-});
+const { user, logout: performLogout } = useAuth();
+const router = useRouter();
+
+const isLoggedIn = computed(() => !!user.value);
+const userName =  computed(() => user.value?.name || '');
 
 const title = computed(() => {
-    return props.isLoggedIn ? `${props.userName}'s memo` : `1110soda's memo app`;
+    return isLoggedIn.value ? `${userName.value}'s memo` : `1110soda's memo app`;
 });
+
+const handleLogout = async() => {
+    await performLogout();
+    router.push('/');
+};
 </script>
 
 <template>
@@ -21,17 +29,17 @@ const title = computed(() => {
                         <li><router-link to="/DeletedMemos" class="inline-block text-secondary-500 border-r border-secondary-200 pr-4 hover:text-secondary-900">
                             削除されたメモ
                         </router-link></li>
-                        <li><a href="/logout" class="inline-block text-secondary-500 hover:text-secondary-900">
+                        <li><a href="#" @click.prevent="handleLogout" class="inline-block text-secondary-500 hover:text-secondary-900">
                             ログアウト
                         </a></li>
                     </template>
                     <template v-else>
-                        <li><a href="/createUser" class="inline-block text-secondary-500 border-r border-secondary-200 pr-4 hover:text-secondary-900">
+                        <li><router-link to="/createUser" class="inline-block text-secondary-500 border-r border-secondary-200 pr-4 hover:text-secondary-900">
                             新規登録
-                        </a></li>
-                        <li><a href="/login" class="inline-block text-secondary-500 hover:text-secondary-900">
+                        </router-link></li>
+                        <li><router-link to="/login" class="inline-block text-secondary-500 hover:text-secondary-900">
                             ログイン
-                        </a></li>
+                        </router-link></li>
                     </template>
                 </ul>
             </nav>
