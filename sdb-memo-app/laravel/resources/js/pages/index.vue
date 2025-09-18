@@ -48,6 +48,7 @@ const isDeletingAPI = ref(false);
 // メモタグ用処理
 const isCategoryModalOpen = ref(false);
 const memoToCategorize = ref<Memo | null>(null);
+const isUpdatingCategoryAPI = ref(false);
 const availableCategories = ref<Category[]>([]);
 const selectedCategoryIds = ref<number[]>([]); //モーダルで選択中のカテゴリーID
 const modalDeadlineAt = ref<string | null>(null); //モーダルで設定中の期日
@@ -291,9 +292,9 @@ const fetchCategories = async() => {
 }
 
 const handleCategorySave = async() => {
-    if (!memoToCategorize.value || isUpdatingAPI.value) return;
+    if (!memoToCategorize.value || isUpdatingCategoryAPI.value) return;
 
-    isUpdatingAPI.value = true;
+    isUpdatingCategoryAPI.value = true;
 
     const memoData = {
         title: memoToCategorize.value.title,
@@ -301,6 +302,10 @@ const handleCategorySave = async() => {
         category_ids: selectedCategoryIds.value,
         deadline_at: modalDeadlineAt.value,
     };
+
+    if (memoData.deadline_at) {
+        memoData.deadline_at = memoData.deadline_at.replace(/-/g, '/'); //'date' typeとして受け取ったので、Controllerへ送る前にYYYY-MM-DD...からYYYY/MM/DD...へ変換
+    }
 
     try {
         const response = await axios.put(`/memos/${memoToCategorize.value.id}`, memoData);
@@ -314,7 +319,7 @@ const handleCategorySave = async() => {
         }
         console.error('APIリクエストエラー:', error);
     } finally {
-        isUpdatingAPI.value = false;
+        isUpdatingCategoryAPI.value = false;
         cancelCategorize();
     }
 };
@@ -563,16 +568,16 @@ onMounted(() => {
             <button @click="cancelCategorize" class="py-2 px-4 rounded bg-secondary-300 text-secondary-700 hover:bg-secondary-400 transition-colors">
                 キャンセル
             </button>
-            <button @click="handleCategorySave" :disabled="isUpdatingAPI" class="py-2 px-4 rounded bg-primary-600 text-white hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                <span v-if="isUpdatingAPI">保存中...</span>
+            <button @click="handleCategorySave" :disabled="isUpdatingCategoryAPI" class="py-2 px-4 rounded bg-primary-600 text-white hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <span v-if="isUpdatingCategoryAPI">保存中...</span>
                 <span v-else>保存</span>
             </button>
         </template>
     </Modal>
 
-    <Modal :is-open="isEditModalOpen">
+    <Modal :is-open="isEditModalOpen" v-if="memoToEdit">
         <template #header>
-            メモを編集: {{ memoToEdit?.title }}
+            メモを編集: {{ memoToEdit.title }}
         </template>
         <template #body>
             <form @submit.prevent="updateMemo">

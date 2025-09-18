@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletes; //SoftDeletes: 一時的削除（delete()、削除する代わりに'deleted_at'に時間を記録してメモを保持）、完全削除（forceDelete()）
 
 class Memo extends Model
 {
