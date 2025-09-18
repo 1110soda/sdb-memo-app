@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import axios from 'axios';
+import axios from '../lib/axios';
 import Button from '../components/Button.vue';
 
 const name = ref('');
@@ -22,8 +22,8 @@ const handleCreateUser = async() => {
     isLoading.value = true;
 
     try {
-        await axios.get('/sanctum/csrf-cookie');
-        await axios.post('/api/createUser', {
+        await axios.get('/sanctum/csrf-cookie', { baseURL: '/' });
+        await axios.post('/createUser', {
             name: name.value,
             email: email.value,
             password: password.value,

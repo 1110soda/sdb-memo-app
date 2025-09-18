@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
+import axios from "../lib/axios";
 import DocumentSvg from "../components/svgs/DocumentSvg.vue";
 import PlusSvg from "../components/svgs/PlusSvg.vue";
 import TrashSvg from "../components/svgs/TrashSvg.vue";
@@ -47,6 +48,7 @@ const isDeletingAPI = ref(false);
 // メモタグ用処理
 const isCategoryModalOpen = ref(false);
 const memoToCategorize = ref<Memo | null>(null);
+const isUpdatingCategoryAPI = ref(false);
 const availableCategories = ref<Category[]>([]);
 const selectedCategoryIds = ref<number[]>([]); //モーダルで選択中のカテゴリーID
 const modalDeadlineAt = ref<string | null>(null); //モーダルで設定中の期日
@@ -124,30 +126,24 @@ const fetchMemos = async(page = 1) => {  //ページネーション有効化時�
     try {
         let url = '';
         if (isPaginationEnabled.value) {
-            url = `/api/memos/paginate?page=${page}`;
+            url = `/memos/paginate?page=${page}`;
         } else {
-            url = '/api/memos/all';
+            url = '/memos/all';
         }
-        const response = await fetch(url);
-        const result = await response.json();
+        const response = await axios.get(url);
+        const result = response.data;
 
-        if (response.ok) {
-            if (isPaginationEnabled.value) {
-                memos.value = result.data;
-                currentPage.value = result.current_page;
-                lastPage.value = result.last_page;
-                totalMemosCount.value = result.total;
-            } else {
-                memos.value = result;
-                // 全件表示時はページネーション情報をクリア
-                currentPage.value = 1;
-                lastPage.value = 1;
-                totalMemosCount.value = result.length;
-            }
+        if (isPaginationEnabled.value) {
+            memos.value = result.data;
+            currentPage.value = result.current_page;
+            lastPage.value = result.last_page;
+            totalMemosCount.value = result.total;
         } else {
-            alert(`メモの取得に失敗しました: ${result.message || 'Unknown error'}`);
-            memos.value = []; //エラー時にメモリストをクリア
-            totalMemosCount.value = 0;
+            memos.value = result;
+            // 全件表示時はページネーション情報をクリア
+            currentPage.value = 1;
+            lastPage.value = 1;
+            totalMemosCount.value = result.length;
         }
     } catch (error) {
         console.error('APIリクエストエラー:', error);
@@ -196,36 +192,18 @@ const saveMemo = async() => {
     };
 
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'); //CSRFトークンを取得
-
-        // HTTPリクエストヘッダーを定義
-        const headers: HeadersInit = {
-            'Content-Type': 'application/json', //送信するデータの形式
-            'X-Requested-With': 'XMLHttpRequest', //LaravelがAjaxリクエストであることを認識するために必要
-        }
-        if (csrfToken) {
-            headers['X-CSRF-TOKEN'] = csrfToken; //セキュリティトークン
-        }
-
-        const response = await fetch('/api/memos', {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(memoData),
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            alert(result.message);
-            memoTitle.value = '';
-            memoContent.value = '';
-            await fetchMemos(currentPage.value); //新しいメモを保存後、リストを再取得し、表示画面を更新
+        const response = await axios.post('/memos', memoData);
+        alert(response.data.message);
+        memoTitle.value = '';
+        memoContent.value = '';
+        await fetchMemos(currentPage.value); //新しいメモを保存後、リストを再取得し、表示画面を更新
+    } catch (error: any) {
+        if (error.response && error.response.status === 422) {
+            alert(Object.values(error.response.data.errors).flat().join('\n'));
         } else {
-            alert(`保存に失敗しました: ${result.message || 'Unknown error'}`);
+            alert('メモの保存中にエラーが発生しました。');
         }
-    } catch (error) {
         console.error('APIリクエストエラー:', error);
-        alert('メモの保存中にエラーが発生しました。');
     } finally {
         isSavingAPI.value = false;
     }
@@ -249,34 +227,16 @@ const updateMemo = async() => {
     };
 
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'); //CSRFトークンを取得
-
-        // HTTPリクエストヘッダーを定義
-        const headers: HeadersInit = {
-            'Content-Type': 'application/json', //送信するデータの形式
-            'X-Requested-With': 'XMLHttpRequest', //LaravelがAjaxリクエストであることを認識するために必要
-        }
-        if (csrfToken) {
-            headers['X-CSRF-TOKEN'] = csrfToken; //セキュリティトークン
-        }
-
-        const response = await fetch(`/api/memos/${memoToEdit.value.id}`, {
-            method: 'PUT',
-            headers: headers,
-            body: JSON.stringify(memoData),
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            alert(result.message);
-            await fetchMemos(currentPage.value); //新しいメモを保存後、リストを再取得し、表示画面を更新
+        const response = await axios.put(`/memos/${memoToEdit.value.id}`, memoData);
+        alert(response.data.message);
+        await fetchMemos(currentPage.value); //新しいメモを保存後、リストを再取得し、表示画面を更新
+    } catch (error: any) {
+        if (error.response && error.response.status === 422) {
+            alert(Object.values(error.response.data.errors).flat().join('\n'));
         } else {
-            alert(`更新に失敗しました: ${result.message || 'Unknown error'}`);
+            alert('メモの更新中にエラーが発生しました。');
         }
-    } catch (error) {
         console.error('APIリクエストエラー:', error);
-        alert('メモの更新中にエラーが発生しました。');
     } finally {
         isUpdatingAPI.value = false;
         cancelEdit();
@@ -300,28 +260,9 @@ const deleteMemo = async() => {
     isDeletingAPI.value = true;
 
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-        const headers: HeadersInit = {
-            'X-Requested-With': 'XMLHttpRequest',
-        }
-        if (csrfToken) {
-            headers['X-CSRF-TOKEN'] = csrfToken;
-        }
-
-        const response = await fetch(`/api/memos/${memoToDelete.value.id}`, {
-            method: 'DELETE',
-            headers: headers,
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            alert(result.message);
-            await fetchMemos(currentPage.value);
-        } else {
-            alert(`削除に失敗しました: ${result.message || 'Unknown error'}`);
-        }
+        const response = await axios.delete(`/memos/${memoToDelete.value.id}`);
+        alert(response.data.message);
+        await fetchMemos(currentPage.value);
     } catch (error) {
         console.error('APIリクエストエラー:', error);
         alert('メモの削除中にエラーが発生しました。')
@@ -343,23 +284,17 @@ const cancelDelete = () => {
 
 const fetchCategories = async() => {
     try {
-        const response = await fetch('/api/categories');
-        const result = await response.json();
-
-        if (response.ok) {
-            availableCategories.value = result.data;
-        } else {
-            console.error('カテゴリーの取得に失敗しました:', result.message || 'Unknown error');
-        }
+        const response = await axios.get('/categories');
+        availableCategories.value = response.data.data;
     } catch (error) {
         console.error('APIリクエストエラー:', error);
     }
 }
 
 const handleCategorySave = async() => {
-    if (!memoToCategorize.value || isUpdatingAPI.value) return;
+    if (!memoToCategorize.value || isUpdatingCategoryAPI.value) return;
 
-    isUpdatingAPI.value = true;
+    isUpdatingCategoryAPI.value = true;
 
     const memoData = {
         title: memoToCategorize.value.title,
@@ -368,37 +303,23 @@ const handleCategorySave = async() => {
         deadline_at: modalDeadlineAt.value,
     };
 
+    if (memoData.deadline_at) {
+        memoData.deadline_at = memoData.deadline_at.replace(/-/g, '/'); //'date' typeとして受け取ったので、Controllerへ送る前にYYYY-MM-DD...からYYYY/MM/DD...へ変換
+    }
+
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'); //CSRFトークンを取得
-
-        // HTTPリクエストヘッダーを定義
-        const headers: HeadersInit = {
-            'Content-Type': 'application/json', //送信するデータの形式
-            'X-Requested-With': 'XMLHttpRequest', //LaravelがAjaxリクエストであることを認識するために必要
-        }
-        if (csrfToken) {
-            headers['X-CSRF-TOKEN'] = csrfToken; //セキュリティトークン
-        }
-
-        const response = await fetch(`/api/memos/${memoToCategorize.value.id}`, {
-            method: 'PUT',
-            headers: headers,
-            body: JSON.stringify(memoData),
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            alert(result.message);
-            await fetchMemos(currentPage.value); //新しいメモを保存後、リストを再取得し、表示画面を更新
+        const response = await axios.put(`/memos/${memoToCategorize.value.id}`, memoData);
+        alert(response.data.message);
+        await fetchMemos(currentPage.value); //新しいメモを保存後、リストを再取得し、表示画面を更新
+    } catch (error: any) {
+        if (error.response && error.response.status === 422) {
+            alert(Object.values(error.response.data.errors).flat().join('\n'));
         } else {
-            alert(`カテゴリー設定の更新に失敗しました: ${result.message || 'Unknown error'}`);
+            alert('カテゴリー設定の更新中にエラーが発生しました。');
         }
-    } catch (error) {
         console.error('APIリクエストエラー:', error);
-        alert('カテゴリー設定の更新中にエラーが発生しました。');
     } finally {
-        isUpdatingAPI.value = false;
+        isUpdatingCategoryAPI.value = false;
         cancelCategorize();
     }
 };
@@ -647,16 +568,16 @@ onMounted(() => {
             <button @click="cancelCategorize" class="py-2 px-4 rounded bg-secondary-300 text-secondary-700 hover:bg-secondary-400 transition-colors">
                 キャンセル
             </button>
-            <button @click="handleCategorySave" :disabled="isUpdatingAPI" class="py-2 px-4 rounded bg-primary-600 text-white hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                <span v-if="isUpdatingAPI">保存中...</span>
+            <button @click="handleCategorySave" :disabled="isUpdatingCategoryAPI" class="py-2 px-4 rounded bg-primary-600 text-white hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <span v-if="isUpdatingCategoryAPI">保存中...</span>
                 <span v-else>保存</span>
             </button>
         </template>
     </Modal>
 
-    <Modal :is-open="isEditModalOpen">
+    <Modal :is-open="isEditModalOpen" v-if="memoToEdit">
         <template #header>
-            メモを編集: {{ memoToEdit?.title }}
+            メモを編集: {{ memoToEdit.title }}
         </template>
         <template #body>
             <form @submit.prevent="updateMemo">

@@ -76,13 +76,13 @@ class MemoController extends Controller
             'content' => 'required|string',
             'category_ids' => 'nullable|array', //カテゴリーIDの配列
             'category_ids.*' => 'exists:categories,id', //各IDがCategoriesテーブルに存在するか
-            'deadline_at' => 'nullable|date_format:Y-m-d',
+            'deadline_at' => 'nullable|date_format:Y/m/d',
         ]);
         $validatedData['user_id'] = $request->user()->id;
 
 //      deadline_atをJSTとして受け取り、UTCに変換して保存
         if (isset($validatedData['deadline_at'])) {
-            $validatedData['deadline_at'] = Carbon::createFromFormat('Y-m-d', $validatedData['deadline_at'], 'Asia/Tokyo')->utc();
+            $validatedData['deadline_at'] = Carbon::createFromFormat('Y/m/d', $validatedData['deadline_at'], 'Asia/Tokyo')->utc();
         }
 
         $memo = Memo::create($validatedData);
@@ -131,12 +131,12 @@ class MemoController extends Controller
                 'content' => 'required|string',
                 'category_ids' => 'nullable|array',
                 'category_ids.*' => 'exists:categories,id',
-                'deadline_at' => 'nullable|date_format:Y-m-d',
+                'deadline_at' => 'nullable|date_format:Y/m/d',
             ]);
             $validatedData['user_id'] = $request->user()->id;
 
             if (isset($validatedData['deadline_at'])) {
-                $validatedData['deadline_at'] = Carbon::createFromFormat('Y-m-d', $validatedData['deadline_at'], 'Asia/Tokyo')->utc();
+                $validatedData['deadline_at'] = Carbon::createFromFormat('Y/m/d', $validatedData['deadline_at'], 'Asia/Tokyo')->utc();
             } else {
                 $validatedData['deadline_at'] = null;
             }

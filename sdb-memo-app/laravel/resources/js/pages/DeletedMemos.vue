@@ -1,12 +1,29 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import axios from "../lib/axios";
 import DocumentSvg from "../components/svgs/DocumentSvg.vue";
 import TrashSvg from "../components/svgs/TrashSvg.vue";
 import Modal from "../components/Modal.vue";
 import RestoreSvg from "../components/svgs/RestoreSvg.vue";
 import IconWithText from "../components/IconWithText.vue";
 
-const deletedMemos = ref([]);
+interface Category {
+    id: number;
+    name: string;
+    color_code: string;
+}
+
+interface Memo {
+    id: number;
+    title: string;
+    content: string;
+    categories: Category[];
+    deadline_at: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+const deletedMemos = ref<Memo[]>([]);
 const expandedMemos = ref<number[]>([]); //展開されているメモカードのIDを保持
 const isFetchingAPI = ref(false);
 const isRestoringAPI = ref(false);
@@ -70,30 +87,24 @@ const fetchDeletedMemos = async (page = 1) => {  //ページネーション有�
     try {
         let url = '';
         if (isPaginationEnabled.value) {
-            url = `/api/memos/deleted/paginate?page=${page}`;
+            url = `/memos/deleted/paginate?page=${page}`;
         } else {
-            url = '/api/memos/deleted/all';
+            url = '/memos/deleted/all';
         }
-        const response = await fetch(url);
-        const result = await response.json();
+        const response = await axios.get(url);
+        const result = response.data;
 
-        if (response.ok) {
-            if (isPaginationEnabled.value) {
-                deletedMemos.value = result.data;
-                currentPage.value = result.current_page;
-                lastPage.value = result.last_page;
-                totalMemosCount.value = result.total;
-            } else {
-                deletedMemos.value = result;
-                // 全件表示時はページネーション情報をクリア
-                currentPage.value = 1;
-                lastPage.value = 1;
-                totalMemosCount.value = result.length;
-            }
+        if (isPaginationEnabled.value) {
+            deletedMemos.value = result.data;
+            currentPage.value = result.current_page;
+            lastPage.value = result.last_page;
+            totalMemosCount.value = result.total;
         } else {
-            alert(`メモの取得に失敗しました: ${result.message || 'Unknown error'}`);
-            deletedMemos.value = []; //エラー時にメモリストをクリア
-            totalMemosCount.value = 0;
+            deletedMemos.value = result;
+            // 全件表示時はページネーション情報をクリア
+            currentPage.value = 1;
+            lastPage.value = 1;
+            totalMemosCount.value = result.length;
         }
     } catch (error) {
         console.error('APIリクエストエラー:', error);
@@ -131,28 +142,9 @@ const restoreMemo = async(id: number) => {
     isRestoringAPI.value = true;
 
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-        const headers: HeadersInit = {
-            'X-Requested-With': 'XMLHttpRequest',
-        }
-        if (csrfToken) {
-            headers['X-CSRF-Token'] = csrfToken;
-        }
-
-        const response = await fetch(`/api/memos/deleted/restore/${id}`, {
-            method: 'PATCH',
-            headers: headers,
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            alert(result.message);
-            await fetchDeletedMemos(currentPage.value);
-        } else {
-            alert(`復元に失敗しました: ${result.message || 'Unknown error'}`);
-        }
+        const response = await axios.patch(`/memos/deleted/restore/${id}`);
+        alert(response.data.message);
+        await fetchDeletedMemos(currentPage.value);
     } catch (error) {
         console.error('APIリクエストエラー:', error);
         alert('メモの復元中にエラーが発生しました。');
@@ -168,28 +160,9 @@ const deleteMemo = async() => {
     isDeletingAPI.value = true;
 
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-        const headers: HeadersInit = {
-            'X-Requested-With': 'XMLHttpRequest',
-        }
-        if (csrfToken) {
-            headers['X-CSRF-TOKEN'] = csrfToken;
-        }
-
-        const response = await fetch(`/api/memos/deleted/${memoToDelete.value.id}`, {
-            method: 'DELETE',
-            headers: headers,
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            alert(result.message);
-            await fetchDeletedMemos(currentPage.value);
-        } else {
-            alert(`削除に失敗しました: ${result.message || 'Unknown error'}`);
-        }
+        const response = await axios.delete(`/memos/deleted/${memoToDelete.value.id}`);
+        alert(response.data.message);
+        await fetchDeletedMemos(currentPage.value);
     } catch (error) {
         console.error('APIリクエストエラー:', error);
         alert('メモの削除中にエラーが発生しました。')
@@ -274,7 +247,7 @@ onMounted(() => {
                         {{ memo.content }}
                     </p>
                     <p class="text-sm font-medium text-secondary-700 mt-2">
-                        作成: {{ memo.created_at }}、更新: {{ memo.updated_at }}
+                        作成: {{ memo.created_at }}、削除: {{ memo.updated_at }}
                     </p>
                 </div>
             </div>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
+import axios from '../lib/axios';
 import Button from '../components/Button.vue';
 
 const router = useRouter();
@@ -17,8 +17,8 @@ const handleLogin = async() => {
     isLoading.value = true;
 
     try {
-        await axios.get('/sanctum/csrf-cookie');
-        await axios.post('/api/login', {
+        await axios.get('/sanctum/csrf-cookie', { baseURL: '/' });
+        await axios.post('/login', {
             email: email.value,
             password: password.value,
         });
