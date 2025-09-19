@@ -1,3 +1,45 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+    --color-bg-main: theme('colors.secondary.100');
+    --color-bg-subtle: theme('colors.secondary.200');
+    --color-bg-card: theme('colors.white');
+
+    --color-text-primary: theme('colors.secondary.900');
+    --color-text-secondary: theme('colors.secondary.700');
+    --color-text-interacrtive-primary: theme('colors.white');
+
+    --color-border: theme('colors.secondary.300');
+    --color-border-subtle: theme('colors.secondary.200');
+
+    --color-interactive-primary: theme('colors.accent.600');
+    --color-interactive-primary-hover: theme('colors.accent.700');
+    --color-interactive-secondary: theme('colors.secondary.200');
+    --color-interactive-secondary-hover: theme('colors.secondary.300');
+    --color-interactive-danger: theme('colors.red.600');
+    --color-interactive-danger-hover: theme('colors.red.700');
+    --color-interactive-focus-ring: theme('colors.accent.500');
+}
+
+.dark {
+    --color-bg-main: theme('colors.secondary.800');
+    --color-bg-subtle: theme('colors.secondary.700');
+    --color-bg-card: theme('colors.secondary.900');
+
+    --color-text-primary: theme('colors.secondary.100');
+    --color-text-secondary: theme('colors.secondary.300');
+    --color-text-interacrtive-primary: theme('colors.white');
+
+    --color-border: theme('colors.secondary.700');
+    --color-border-subtle: theme('colors.secondary.800');
+
+    --color-interactive-primary: theme('colors.accent.600');
+    --color-interactive-primary-hover: theme('colors.accent.500');
+    --color-interactive-secondary: theme('colors.secondary.200');
+    --color-interactive-secondary-hover: theme('colors.secondary.100');
+    --color-interactive-danger: theme('colors.red.600');
+    --color-interactive-danger-hover: theme('colors.red.500');
+    --color-interactive-focus-ring: theme('colors.accent.400');
+}

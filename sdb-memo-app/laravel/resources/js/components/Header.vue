@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import DocumentSvg from './svgs/DocumentSvg.vue';
 import { useAuth } from '../composables/useAuth';
+import { useThemeStore } from "../stores/useThemeStore.ts";
 import { useRouter } from 'vue-router';
+import DocumentSvg from './svgs/DocumentSvg.vue';
+import SunSvg from './svgs/SunSvg.vue';
+import MoonSvg from './svgs/MoonSvg.vue';
 
 const { user, logout: performLogout } = useAuth();
+const themeStore = useThemeStore();
 const router = useRouter();
 
 const isLoggedIn = computed(() => !!user.value);
@@ -22,7 +26,11 @@ const handleLogout = async() => {
 
 <template>
     <header class="p-4 flex flex-col items-center border-b bg-white border-secondary-200 shadow-lg pb-6 transition-colors duration-300">
-        <div class="w-full flex justify-end mb-2">
+        <div class="w-full flex justify-end items-center mb-2 space-x-4">
+            <button @click="themeStore.toggleTheme" class="p-2 rounded-full hover:bg-secondary-100 dark:hover:bg-secondary-800 transition-colors">
+                <SunSvg v-if="themeStore.isDarkMode" class="w-5 h-5 text-secondary-700 dark:text-secondary-200" />
+                <SunSvg v-else class="w-5 h-5 text-secondary-700 dark:text-secondary-200" />
+            </button>
             <nav>
                 <ul class="flex space-x-4">
                     <template v-if="isLoggedIn">
