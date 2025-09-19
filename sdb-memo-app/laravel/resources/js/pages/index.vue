@@ -6,6 +6,8 @@ import PlusSvg from "../components/svgs/PlusSvg.vue";
 import TrashSvg from "../components/svgs/TrashSvg.vue";
 import EditSvg from "../components/svgs/EditSvg.vue";
 import StatusSvg from "../components/svgs/StatusSvg.vue";
+import FilterSvg from "../components/svgs/FilterSvg.vue";
+import SortSvg from "../components/svgs/SortSvg.vue";
 import TextareaForm from "../components/TextareaForm.vue";
 import Button from "../components/Button.vue";
 import Modal from "../components/Modal.vue";
@@ -109,6 +111,21 @@ const displayedPages = computed(() => {
     return pages;
 });
 
+// メモフィルター/並び替え用処理
+const isFilterModalOpen = ref(false);
+const isSortDropdownOpen = ref(false);
+const activeCategoryIds = ref<number[]>([]);
+const currentSort = ref('updated_at_desc');
+const sortOptions = ref([
+    { value: 'created_at_desc', label: '作成が新しい順' },
+    { value: 'created_at_asc', label: '作成が古い順' },
+    { value: 'updated_at_desc', label: '更新が新しい順' },
+    { value: 'updated_at_asc', label: '更新が古い順' },
+    { value: 'deadline_at_desc', label: '期日が遠い順' },
+    { value: 'deadline_at_asc', label: '期日が近い順' },
+])
+
+// 他
 const isContentEntered = computed(() => {
     return memoContent.value.length > 0;
 });
@@ -124,13 +141,19 @@ const fetchMemos = async(page = 1) => {  //ページネーション有効化時�
     isFetchingAPI.value = true;
 
     try {
-        let url = '';
+        const baseUrl = isPaginationEnabled.value ? '/memos/paginate' : '/memos/all';
+        const params = new URLSearchParams();
         if (isPaginationEnabled.value) {
-            url = `/memos/paginate?page=${page}`;
-        } else {
-            url = '/memos/all';
+            params.append('page', page.toString());
         }
-        const response = await axios.get(url);
+        if (activeCategoryIds.value.length > 0) {
+            activeCategoryIds.value.forEach(id => {
+                params.append('categoryIds[]', id.toString());
+            });
+        }
+        params.append('sort', currentSort.value);
+
+        const response = await axios.get(`${baseUrl}?${params.toString()}`);
         const result = response.data;
 
         if (isPaginationEnabled.value) {
@@ -338,6 +361,43 @@ const cancelCategorize = () => {
     isCategoryModalOpen.value = false;
 };
 
+const openFilterModal = () => isFilterModalOpen.value = true;
+
+const applyFilters = () => {
+    isFilterModalOpen.value = false;
+    fetchMemos();
+};
+
+const resetFilters = () => {
+    activeCategoryIds.value = [];
+    currentSort.value = 'updated_at_desc';
+    applyFilters();
+};
+
+const currentSortLabel = computed(() => {
+    return sortOptions.value.find(option => option.value === currentSort.value)?.label || '';
+});
+
+const toggleSortDropdown = () => {
+    isSortDropdownOpen.value = !isSortDropdownOpen.value;
+};
+
+const selectSortOption = (value: string) => {
+    currentSort.value = value;
+    isSortDropdownOpen.value = false;
+};
+
+watch(currentSort, (newSortValue) => {
+    // 期日でソートするとき、期限付きのメモのみを表示
+    if (newSortValue.startsWith('deadline_at')) {
+        const deadlineCategory = availableCategories.value.find(cat => cat.name === '期限付き');
+        if (deadlineCategory && !activeCategoryIds.value.includes(deadlineCategory.id)) {
+            activeCategoryIds.value.push(deadlineCategory.id);
+        }
+    }
+    fetchMemos();
+});
+
 const getCardBorderStyle = (memo: Memo) => {
     if (memo.categories && memo.categories.length > 0) {
         const colors = memo.categories.map(cat => cat.color_code);
@@ -365,7 +425,7 @@ onMounted(() => {
 
 <template>
     <div class="p-4 md:p-8 flex justify-center items-start min-h-screen">
-        <div class="w-full max-w-lg flex flex-col space-y-8">
+        <div class="w-full max-w-xl flex flex-col space-y-8">
             <div class="bg-white p-6 rounded-lg shadow-lg hover:scale-105 hover:shadow-secondary-400 transition-all duration-300">
                 <div class="flex items-center space-x-2 mb-6">
                     <PlusSvg class="w-6 h-6 text-accent-800" />
@@ -412,6 +472,40 @@ onMounted(() => {
                         <span v-if="isPaginationEnabled">全て表示</span>
                         <span v-else>ページ形式で表示</span>
                     </button>
+                    <button @click="openFilterModal" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
+                        <IconWithText>
+                            <template #icon>
+                                <FilterSvg class="w-4 h-4" />
+                            </template>
+                            <template #text>
+                                フィルター
+                            </template>
+                        </IconWithText>
+                    </button>
+                    <div class="relative">
+                        <button @click="toggleSortDropdown" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
+                            <IconWithText :is-expanded="isSortDropdownOpen">
+                                <template #icon>
+                                    <SortSvg class="w-4 h-4" />
+                                </template>
+                                <template #text>
+                                    {{ currentSortLabel }}
+                                </template>
+                            </IconWithText>
+                        </button>
+                        <div v-if="isSortDropdownOpen" class="absolute top-full mt-2 w-48 bg-white rounded-md shadow-lg z-20">
+                            <ul>
+                                <li
+                                    v-for="option in sortOptions"
+                                    :key="option.value"
+                                    @click="selectSortOption(option.value)"
+                                    class="px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 cursor-pointer"
+                                >
+                                    {{ option.label }}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                     <div class="bg-primary-200 text-sm text-secondary-700 rounded-full px-3 py-1">
                         {{ displayMemoCount }}
                     </div>
@@ -421,8 +515,8 @@ onMounted(() => {
                 メモを取得中...
             </div>
             <div v-else class="grid gap-4">
-                <p v-if="memos.length === 0" class="text-secondary-900 text-center">
-                    まだメモがありません。
+                <p v-if="!memos.length" class="text-secondary-900 text-center">
+                    該当するメモがありません。
                 </p>
                 <div
                     v-for="memo in memos"
@@ -504,7 +598,7 @@ onMounted(() => {
                         @click="fetchMemos(Number(page))"
                         :class="[
                             'px-3 py-1 rounded-full',
-                            page === currentPage ? 'text-secondary-900 bg-primary-200 font-semibold hover:cursor-not-allowed' : 'text-secondary-700 bg-black bg-opacity-0 hover:text-secondary-900 hover:bg-opacity-5 transition-all duration-300'
+                            page === currentPage ? 'text-secondary-900 bg-primary-200 hover:cursor-not-allowed' : 'text-secondary-700 bg-black bg-opacity-0 hover:text-secondary-900 hover:bg-opacity-5 transition-all duration-300'
                         ]">
                         {{ page}}
                     </button>
@@ -530,6 +624,39 @@ onMounted(() => {
         </div>
     </div>
 <!--ポップアップ用-->
+    <Modal :is-open="isFilterModalOpen">
+        <template #header>
+            フィルター
+        </template>
+        <template #body>
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-secondary-700">
+                    カテゴリーで絞り込み:
+                </label>
+                <div v-for="category in availableCategories" :key="category.id" class="flex items-center">
+                    <input
+                        type="checkbox"
+                        :id="`filter-category-${category.id}`"
+                        :value="category.id"
+                        v-model="activeCategoryIds"
+                        class="h-4 w-4 rounded border-gray-300 text-accent-600 focus:ring-accent-500"
+                    />
+                    <label :for="`filter-category-${category.id}`" class="ml-2 text-sm text-secondary-900">
+                        {{ category.name }}
+                    </label>
+                </div>
+            </div>
+        </template>
+        <template #footer>
+            <button @click="resetFilters" class="py-2 px-4 rounded bg-secondary-300 text-secondary-700 hover:bg-secondary-400">
+                リセット
+            </button>
+            <button @click="applyFilters" class="py-2 px-4 rounded bg-primary-600 text-white hover:bg-primary-700">
+                適用
+            </button>
+        </template>
+    </Modal>
+
     <Modal :is-open="isCategoryModalOpen">
         <template #header>
             メモのカテゴリーを設定: {{ memoToCategorize?.title }}
@@ -611,6 +738,7 @@ onMounted(() => {
             </button>
         </template>
     </Modal>
+
     <Modal :is-open="isDeleteModalOpen">
         <template #header>
             削除の確認: {{ memoToDelete?.title }}

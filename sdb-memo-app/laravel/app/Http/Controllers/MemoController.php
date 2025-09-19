@@ -19,10 +19,41 @@ class MemoController extends Controller
      * @return  \Illuminate\Http\JsonResponse
      */
 
-    public function indexAll(): JsonResponse
+    public function indexAll(Request $request): JsonResponse
     {
-        //      メモを更新日時順に並べ、JSONレスポンスとして返す
-        $memos = Memo::where('user_id', Auth::id())->with('categories')->orderBy('updated_at', 'desc')->get(); //すべてのメモを取得
+        $query = Memo::where('user_id', Auth::id())->with('categories');
+//  フィルター処理
+        if ($request->has('categoryIds')) {
+            $query->whereHas('categories', function ($q) use ($request) {
+                $q->whereIn('categories.id', $request->categoryIds);
+            });
+        }
+//  ソート処理
+        $sort = $request->input('sort', 'updated_at_desc'); //デフォルトは更新が新しい順
+        switch ($sort) {
+            case 'created_at_desc':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'created_at_asc':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'updated_at_desc':
+                $query->orderBy('updated_at', 'desc');
+                break;
+            case 'updated_at_asc':
+                $query->orderBy('updated_at', 'asc');
+                break;
+            case 'deadline_at_desc':
+                $query->orderBy('deadline_at', 'desc');
+                break;
+            case 'deadline_at_asc':
+                $query->orderBy('deadline_at', 'asc');
+                break;
+            default:
+                $query->orderBy('updated_at', 'desc');
+        }
+
+        $memos = $query->get();
         $formattedMemos = $memos->map(function ($memo) {
             return [
                 'id' => $memo->id,
@@ -43,10 +74,41 @@ class MemoController extends Controller
         return response()->json($formattedMemos);
     }
 
-    public function indexPaginate(): JsonResponse
+    public function indexPaginate(Request $request): JsonResponse
     {
-//      メモを更新日時順に並べ、JSONレスポンスとして返す
-        $memos = Memo::where('user_id', Auth::id())->with('categories')->orderBy('updated_at', 'desc')->paginate(5); //1ページあたり5件のメモを取得
+        $query = Memo::where('user_id', Auth::id())->with('categories');
+//  フィルター処理
+        if ($request->has('categoryIds')) {
+            $query->whereHas('categories', function ($q) use ($request) {
+                $q->whereIn('categories.id', $request->categoryIds);
+            });
+        }
+//  ソート処理
+        $sort = $request->input('sort', 'updated_at_desc'); //デフォルトは更新が新しい順
+        switch ($sort) {
+            case 'created_at_desc':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'created_at_asc':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'updated_at_desc':
+                $query->orderBy('updated_at', 'desc');
+                break;
+            case 'updated_at_asc':
+                $query->orderBy('updated_at', 'asc');
+                break;
+            case 'deadline_at_desc':
+                $query->orderBy('deadline_at', 'desc');
+                break;
+            case 'deadline_at_asc':
+                $query->orderBy('deadline_at', 'asc');
+                break;
+            default:
+                $query->orderBy('updated_at', 'desc');
+        }
+
+        $memos = $query->paginate(5)->appends($request->query()); //1ページあたり5件のメモを取得
         $formattedMemos = $memos->getCollection()->map(function ($memo) {
             return [
                 'id' => $memo->id,
