@@ -410,7 +410,7 @@ const getCardBorderStyle = (memo: Memo) => {
             const gradientColors = colors.join(', ');
             return {
                 border: `2px solid transparent`,
-                background: `linear-gradient(white, white) padding-box, linear-gradient(to right, ${gradientColors}) border-box`,
+                background: `linear-gradient(var(--color-bg-card), var(--color-bg-card)) padding-box, linear-gradient(to right, ${gradientColors}) border-box`,
             };
         }
     }
@@ -426,29 +426,29 @@ onMounted(() => {
 <template>
     <div class="p-4 md:p-8 flex justify-center items-start min-h-screen">
         <div class="w-full max-w-xl flex flex-col space-y-8">
-            <div class="bg-white p-6 rounded-lg shadow-lg hover:scale-105 hover:shadow-secondary-400 transition-all duration-300">
+            <div class="bg-theme-bg-card p-6 rounded-lg shadow-lg hover:scale-105 transition-all duration-300">
                 <div class="flex items-center space-x-2 mb-6">
-                    <PlusSvg class="w-6 h-6 text-accent-800" />
-                    <h2 class="text-xl font-medium text-secondary-900">
+                    <PlusSvg class="w-6 h-6 text-theme-accent" />
+                    <h2 class="text-xl font-medium text-theme-text-primary">
                         新しいメモ
                     </h2>
                 </div>
 
                 <form @submit.prevent="saveMemo">
                     <div class="mb-4">
-                        <label for="memoTitle" class="block text-secondary-700 text-sm font-medium mb-2">
+                        <label for="memoTitle" class="block text-theme-text-secondary text-sm font-medium mb-2">
                             タイトル
                         </label>
                         <input
                             id="memoTitle"
                             type="text"
                             v-model="memoTitle"
-                            class="appearance-none border rounded w-full py-2 px-3 text-secondary-700 leading-tight focus:outline-none focus:shadow-outline transition-colors border-secondary-300 focus:border-accent-800"
+                            class="appearance-none border rounded w-full py-2 px-3 text-secondary-700 leading-tight focus:outline-none focus:shadow-outline transition-colors border-theme-border focus:border-theme-accent"
                             placeholder="タイトルを入力してください…（空でも可）"
                         />
                     </div>
                     <div class="mb-4">
-                        <label for="memoContent" class="block text-secondary-700 text-sm font-medium mb-2">
+                        <label for="memoContent" class="block text-theme-text-secondary text-sm font-medium mb-2">
                             内容
                         </label>
                         <TextareaForm v-model="memoContent" @saveMemo="saveMemo" />
@@ -462,17 +462,17 @@ onMounted(() => {
             </div>
             <div class="flex justify-between items-center mb-6">
                 <div class="flex items-center space-x-2">
-                    <DocumentSvg class="w-6 h-6 text-accent-800" />
-                    <h2 class="text-xl font-medium text-secondary-900">
+                    <DocumentSvg class="w-6 h-6 text-theme-accent" />
+                    <h2 class="text-xl font-medium text-theme-text-primary">
                         保存されたメモ
                     </h2>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <button @click="togglePagination" class="text-sm text-secondary-700 bg-black bg-opacity-0 rounded-full px-3 py-1 mr-2 hover:text-secondary-900 hover:bg-opacity-5 transition-all duration-300">
+                    <button @click="togglePagination" class="text-sm text-theme-text-secondary bg-theme-bg-accent rounded-full px-3 py-1 mr-2 hover:text-theme-text-primary hover-dim transition-all duration-300">
                         <span v-if="isPaginationEnabled">全て表示</span>
                         <span v-else>ページ形式で表示</span>
                     </button>
-                    <button @click="openFilterModal" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
+                    <button @click="openFilterModal" class="text-theme-text-secondary hover:text-theme-text-primary bg-theme-bg-accent rounded-full p-2 transition-colors hover-dim">
                         <IconWithText>
                             <template #icon>
                                 <FilterSvg class="w-4 h-4" />
@@ -483,7 +483,7 @@ onMounted(() => {
                         </IconWithText>
                     </button>
                     <div class="relative">
-                        <button @click="toggleSortDropdown" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
+                        <button @click="toggleSortDropdown" class="text-theme-text-secondary hover:text-theme-text-primary bg-theme-bg-accent rounded-full p-2 transition-colors hover-dim">
                             <IconWithText :is-expanded="isSortDropdownOpen">
                                 <template #icon>
                                     <SortSvg class="w-4 h-4" />
@@ -493,36 +493,36 @@ onMounted(() => {
                                 </template>
                             </IconWithText>
                         </button>
-                        <div v-if="isSortDropdownOpen" class="absolute top-full mt-2 w-48 bg-white rounded-md shadow-lg z-20">
+                        <div v-if="isSortDropdownOpen" class="absolute top-full mt-2 w-48 bg-theme-bg-card rounded-md shadow-lg z-20">
                             <ul>
                                 <li
                                     v-for="option in sortOptions"
                                     :key="option.value"
                                     @click="selectSortOption(option.value)"
-                                    class="px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100 cursor-pointer"
+                                    class="px-4 py-2 text-sm text-theme-text-secondary hover:bg-theme-bg-main cursor-pointer transition-colors"
                                 >
                                     {{ option.label }}
                                 </li>
                             </ul>
                         </div>
                     </div>
-                    <div class="bg-primary-200 text-sm text-secondary-700 rounded-full px-3 py-1">
+                    <div class="bg-theme-bg-accent-subtle text-sm text-theme-text-secondary rounded-full px-3 py-1">
                         {{ displayMemoCount }}
                     </div>
                 </div>
             </div>
-            <div v-if="isFetchingAPI" class="text-secondary-900 text-center">
+            <div v-if="isFetchingAPI" class="text-theme-text-primary text-center">
                 メモを取得中...
             </div>
             <div v-else class="grid gap-4">
-                <p v-if="!memos.length" class="text-secondary-900 text-center">
+                <p v-if="!memos.length" class="text-theme-text-primary text-center">
                     該当するメモがありません。
                 </p>
                 <div
                     v-for="memo in memos"
                     :key="memo.id"
                     @click="toggleExpand(memo.id)"
-                    class="group relative bg-white min-w-0 p-4 rounded-lg shadow-lg cursor-pointer hover:scale-105 hover:shadow-secondary-400 transition-all duration-300"
+                    class="group relative bg-theme-bg-card min-w-0 p-4 rounded-lg shadow-lg cursor-pointer hover:scale-105 transition-all duration-300"
                     :style="getCardBorderStyle(memo)"
                 >
                     <div v-if="memo.categories.length > 0 || memo.deadline_at" class="absolute top-2 right-2 flex flex-col items-end space-y-1 z-10">
@@ -535,7 +535,7 @@ onMounted(() => {
                         />
                     </div>
                     <div class="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                        <button @click.stop="confirmCategorize(memo)" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
+                        <button @click.stop="confirmCategorize(memo)" class="text-theme-text-secondary hover:text-theme-text-primary bg-theme-bg-card rounded-full p-2 transition-colors hover-dim">
                             <IconWithText>
                                 <template #icon>
                                     <StatusSvg class="w-4 h-4" />
@@ -545,7 +545,7 @@ onMounted(() => {
                                 </template>
                             </IconWithText>
                         </button>
-                        <button @click.stop="confirmEdit(memo)" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
+                        <button @click.stop="confirmEdit(memo)" class="text-theme-text-secondary hover:text-theme-text-primary bg-theme-bg-card rounded-full p-2 transition-colors hover-dim">
                             <IconWithText>
                                 <template #icon>
                                     <EditSvg class="w-4 h-4" />
@@ -555,7 +555,7 @@ onMounted(() => {
                                 </template>
                             </IconWithText>
                         </button>
-                        <button @click.stop="confirmDelete(memo)" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
+                        <button @click.stop="confirmDelete(memo)" class="text-theme-text-secondary hover:text-theme-text-primary bg-theme-bg-card rounded-full p-2 transition-colors hover-dim">
                             <IconWithText>
                                 <template #icon>
                                     <TrashSvg class="w-4 h-4" />
@@ -566,13 +566,13 @@ onMounted(() => {
                             </IconWithText>
                         </button>
                     </div>
-                    <h3 :class="{ 'line-clamp-1 break-words': !isExpanded(memo.id) }" class="font-semibold text-secondary-900 whitespace-pre-wrap break-words transition-all duration-300 mb-1">
+                    <h3 :class="{ 'line-clamp-1 break-words': !isExpanded(memo.id) }" class="font-semibold text-theme-text-primary whitespace-pre-wrap break-words transition-all duration-300 mb-1">
                         {{ memo.title }}
                     </h3>
-                    <p :class="{ 'line-clamp-3 break-words': !isExpanded(memo.id) }" class="text-sm text-secondary-700 whitespace-pre-wrap break-words transition-all duration-300">
+                    <p :class="{ 'line-clamp-3 break-words': !isExpanded(memo.id) }" class="text-sm text-theme-text-secondary whitespace-pre-wrap break-words transition-all duration-300">
                         {{ memo.content }}
                     </p>
-                    <p class="text-sm font-medium text-secondary-700 mt-2">
+                    <p class="text-sm font-medium text-theme-text-secondary mt-2">
                         作成: {{ memo.created_at }}、更新: {{ memo.updated_at }}
                     </p>
                 </div>
@@ -581,15 +581,15 @@ onMounted(() => {
                 <button
                     @click="fetchMemos()"
                     :disabled="currentPage === 1"
-                    class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 transition-all duration-300"
-                    :class="[currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:text-secondary-900 hover:bg-opacity-5']">
+                    class="px-3 py-1 rounded-full text-theme-text-secondary bg-theme-bg-accent transition-all duration-300"
+                    :class="[currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:text-theme-text-primary hover-dim']">
                     &lt;&lt;
                 </button>
                 <button
                     @click="fetchMemos(currentPage - 1)"
                     :disabled="currentPage === 1"
-                    class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 transition-all duration-300"
-                    :class="[currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:text-secondary-900 hover:bg-opacity-5']">
+                    class="px-3 py-1 rounded-full text-theme-text-secondary bg-theme-bg-accent transition-all duration-300"
+                    :class="[currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:text-theme-text-primary hover-dim']">
                     &lt;
                 </button>
                 <template v-for="page in displayedPages" :key="page">
@@ -598,26 +598,26 @@ onMounted(() => {
                         @click="fetchMemos(Number(page))"
                         :class="[
                             'px-3 py-1 rounded-full',
-                            page === currentPage ? 'text-secondary-900 bg-primary-200 hover:cursor-not-allowed' : 'text-secondary-700 bg-black bg-opacity-0 hover:text-secondary-900 hover:bg-opacity-5 transition-all duration-300'
+                            page === currentPage ? 'text-theme-text-primary bg-theme-bg-accent-subtle hover:cursor-not-allowed' : 'text-theme-text-secondary bg-theme-bg-accent hover:text-theme-text-primary transition-all duration-300 hover-dim'
                         ]">
-                        {{ page}}
+                        {{ page }}
                     </button>
-                    <span v-else class="px-3 py-1 rounded-full text-secondary-700">
+                    <span v-else class="px-3 py-1 rounded-full text-theme-text-secondary">
                         {{ page }}
                     </span>
                 </template>
                 <button
                     @click="fetchMemos(currentPage + 1)"
                     :disabled="currentPage === lastPage"
-                    class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 transition-all duration-300"
-                    :class="[currentPage === lastPage ? 'opacity-50 cursor-not-allowed' : 'hover:text-secondary-900 hover:bg-opacity-5']">
+                    class="px-3 py-1 rounded-full text-theme-text-secondary bg-theme-bg-accent transition-all duration-300"
+                    :class="[currentPage === lastPage ? 'opacity-50 cursor-not-allowed' : 'hover:text-theme-text-primary hover-dim']">
                     &gt;
                 </button>
                 <button
                     @click="fetchMemos(lastPage)"
                     :disabled="currentPage === lastPage"
-                    class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 transition-all duration-300"
-                    :class="[currentPage === lastPage ? 'opacity-50 cursor-not-allowed' : 'hover:text-secondary-900 hover:bg-opacity-5']">
+                    class="px-3 py-1 rounded-full text-theme-text-secondary bg-theme-bg-accent transition-all duration-300"
+                    :class="[currentPage === lastPage ? 'opacity-50 cursor-not-allowed' : 'hover:text-theme-text-primary hover-dim']">
                     &gt;&gt;
                 </button>
             </div>
@@ -630,7 +630,7 @@ onMounted(() => {
         </template>
         <template #body>
             <div class="space-y-2">
-                <label class="block text-sm font-medium text-secondary-700">
+                <label class="block text-sm font-medium text-theme-text-secondary">
                     カテゴリーで絞り込み:
                 </label>
                 <div v-for="category in availableCategories" :key="category.id" class="flex items-center">
@@ -639,19 +639,19 @@ onMounted(() => {
                         :id="`filter-category-${category.id}`"
                         :value="category.id"
                         v-model="activeCategoryIds"
-                        class="h-4 w-4 rounded border-gray-300 text-accent-600 focus:ring-accent-500"
+                        class="h-4 w-4 rounded border-theme-border text-theme-accent focus:theme-interactive-focus-ring"
                     />
-                    <label :for="`filter-category-${category.id}`" class="ml-2 text-sm text-secondary-900">
+                    <label :for="`filter-category-${category.id}`" class="ml-2 text-sm text-theme-text-primary">
                         {{ category.name }}
                     </label>
                 </div>
             </div>
         </template>
         <template #footer>
-            <button @click="resetFilters" class="py-2 px-4 rounded bg-secondary-300 text-secondary-700 hover:bg-secondary-400">
+            <button @click="resetFilters" class="py-2 px-4 rounded bg-theme-interactive-secondary text-theme-text-secondary hover-dim transition-colors">
                 リセット
             </button>
-            <button @click="applyFilters" class="py-2 px-4 rounded bg-primary-600 text-white hover:bg-primary-700">
+            <button @click="applyFilters" class="py-2 px-4 rounded bg-theme-interactive-primary text-theme-text-interactive-primary hover-dim transition-colors">
                 適用
             </button>
         </template>
@@ -663,7 +663,7 @@ onMounted(() => {
         </template>
         <template #body>
             <div class="mb-4">
-                <label class="block text-secondary-700 text-sm font-medium mb-2">カテゴリー:</label>
+                <label class="block text-theme-text-secondary text-sm font-medium mb-2">カテゴリー:</label>
                 <div class="grid grid-cols-2 gap-2">
                     <div v-for="category in availableCategories" :key="category.id" class="flex items-center">
                         <input
@@ -671,10 +671,10 @@ onMounted(() => {
                             :id="`category-${category.id}`"
                             :value="category.id"
                             v-model="selectedCategoryIds"
-                            class="mr-2 rounded text-accent-600 focus:ring-accent-500"
+                            class="mr-2 rounded text-theme-accent focus:theme-interactive-focus-ring"
                             :style="{ 'accent-color': category.color_code }"
                         />
-                        <label :for="`category-${category.id}`" class="text-secondary-700 flex items-center">
+                        <label :for="`category-${category.id}`" class="text-theme-text-secondary flex items-center">
                             <span class="inline-block w-3 h-3 rounded-full mr-2" :style="{ backgroundColor: category.color_code }"></span>
                             {{ category.name }}
                         </label>
@@ -682,20 +682,20 @@ onMounted(() => {
                 </div>
             </div>
             <div class="mb-4">
-                <label for="deadline_at" class="block text-secondary-700 text-sm font-medium mb-2">期日:</label>
+                <label for="deadline_at" class="block text-theme-text-secondary text-sm font-medium mb-2">期日:</label>
                 <input
                     type="date"
                     id="deadline_at"
                     v-model="modalDeadlineAt"
-                    class="appearance-none border rounded w-full py-2 px-3 text-secondary-700 leading-tight focus:outline-none focus:shadow-outline transition-colors border-secondary-300 focus:border-accent-800"
+                    class="appearance-none border rounded w-full py-2 px-3 text-secondary-700 leading-tight focus:outline-none focus:shadow-outline transition-colors border-theme-border focus:border-theme-accent"
                 />
             </div>
         </template>
         <template #footer>
-            <button @click="cancelCategorize" class="py-2 px-4 rounded bg-secondary-300 text-secondary-700 hover:bg-secondary-400 transition-colors">
+            <button @click="cancelCategorize" class="py-2 px-4 rounded bg-theme-interactive-secondary text-theme-text-secondary hover-dim transition-colors">
                 キャンセル
             </button>
-            <button @click="handleCategorySave" :disabled="isUpdatingCategoryAPI" class="py-2 px-4 rounded bg-primary-600 text-white hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <button @click="handleCategorySave" :disabled="isUpdatingCategoryAPI" class="py-2 px-4 rounded bg-theme-interactive-primary text-theme-text-interactive-primary hover-dim transition-colors btn-disabled">
                 <span v-if="isUpdatingCategoryAPI">保存中...</span>
                 <span v-else>保存</span>
             </button>
@@ -709,19 +709,19 @@ onMounted(() => {
         <template #body>
             <form @submit.prevent="updateMemo">
                 <div class="mb-4">
-                    <label for="editMemoTitle" class="block text-secondary-700 text-sm font-medium mb-2">
+                    <label for="editMemoTitle" class="block text-theme-text-secondary text-sm font-medium mb-2">
                         タイトル
                     </label>
                     <input
                         id="editMemoTitle"
                         type="text"
                         v-model="memoToEdit.title"
-                        class="appearance-none border rounded w-full py-2 px-3 text-secondary-700 leading-tight focus:outline-none focus:shadow-outline transition-colors border-secondary-300 focus:border-accent-800"
+                        class="appearance-none border rounded w-full py-2 px-3 text-secondary-700 leading-tight focus:outline-none focus:shadow-outline transition-colors border-theme-border focus:border-theme-accent"
                         placeholder="タイトルを入力してください…（空でも可）"
                     />
                 </div>
                 <div class="mb-4">
-                    <label for="editMemoContent" class="block text-secondary-700 text-sm font-medium mb-2">
+                    <label for="editMemoContent" class="block text-theme-text-secondary text-sm font-medium mb-2">
                         内容
                     </label>
                     <TextareaForm v-model="memoToEdit.content" @saveMemo="updateMemo" />
@@ -729,10 +729,10 @@ onMounted(() => {
             </form>
         </template>
         <template #footer>
-            <button @click="cancelEdit" class="py-2 px-4 rounded bg-secondary-300 text-secondary-700 hover:bg-secondary-400 transition-colors">
+            <button @click="cancelEdit" class="py-2 px-4 rounded bg-theme-interactive-secondary text-theme-text-secondary hover-dim transition-colors">
                 キャンセル
             </button>
-            <button @click="updateMemo" :disabled="!isEditContentEntered || isUpdatingAPI" class="py-2 px-4 rounded bg-primary-600 text-white hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <button @click="updateMemo" :disabled="!isEditContentEntered || isUpdatingAPI" class="py-2 px-4 rounded bg-theme-interactive-primary text-theme-text-interactive-primary hover-dim transition-colors btn-disabled">
                 <span v-if="isUpdatingAPI">更新中...</span>
                 <span v-else>更新</span>
             </button>
@@ -747,10 +747,10 @@ onMounted(() => {
             本当にこのメモを削除しますか？
         </template>
         <template #footer>
-            <button @click="cancelDelete" class="py-2 px-4 rounded bg-secondary-300 text-secondary-700 hover:bg-secondary-400 transition-colors">
+            <button @click="cancelDelete" class="py-2 px-4 rounded bg-theme-interactive-secondary text-theme-text-secondary hover-dim transition-colors">
                 キャンセル
             </button>
-            <button @click="deleteMemo" :disabled="isDeletingAPI" class="py-2 px-4 rounded bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <button @click="deleteMemo" :disabled="isDeletingAPI" class="py-2 px-4 rounded bg-theme-interactive-danger text-theme-text-interactive-primary hover-dim transition-colors btn-disabled">
                 <span v-if="isDeletingAPI">削除中...</span>
                 <span v-else>削除</span>
             </button>

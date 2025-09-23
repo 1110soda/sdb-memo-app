@@ -46,15 +46,15 @@ const handleCreateUser = async() => {
 </script>
 
 <template>
-    <div class="p-4 md:p-8 flex justify-center items-start min-h-screen bg-primary-100">
+    <div class="p-4 md:p-8 flex justify-center items-start min-h-screen bg-theme-bg-accent">
         <div class="w-full max-w-lg flex flex-col space-y-8">
-            <div class="bg-white p-6 rounded-lg shadow-lg hover:scale-105 hover:shadow-secondary-400 transition-all duration-300">
-                <h1 class="text-2xl font-bold text-center text-secondary-900 mb-6">
+            <div class="bg-theme-bg-card p-6 rounded-lg shadow-lg hover:scale-105 transition-all duration-300">
+                <h1 class="text-2xl font-bold text-center text-theme-text-primary mb-6">
                     新規ユーザー登録
                 </h1>
                 <form @submit.prevent="handleCreateUser" class="space-y-6">
                     <div>
-                        <label for="name" class="block text-sm font-medium text-secondary-700">
+                        <label for="name" class="block text-sm font-medium text-theme-text-secondary">
                             ユーザー名
                         </label>
                         <input
@@ -67,7 +67,7 @@ const handleCreateUser = async() => {
                         />
                     </div>
                     <div>
-                        <label for="email" class="block text-sm font-medium text-secondary-700">
+                        <label for="email" class="block text-sm font-medium text-theme-text-secondary">
                             メールアドレス
                         </label>
                         <input
@@ -80,7 +80,7 @@ const handleCreateUser = async() => {
                         />
                     </div>
                     <div>
-                        <label for="password" class="block text-sm font-medium text-secondary-700">
+                        <label for="password" class="block text-sm font-medium text-theme-text-secondary">
                             パスワード
                         </label>
                         <input
@@ -93,7 +93,7 @@ const handleCreateUser = async() => {
                         />
                     </div>
                     <div>
-                        <label for="passwordConfirmation" class="block text-sm font-medium text-secondary-700">
+                        <label for="passwordConfirmation" class="block text-sm font-medium text-theme-text-secondary">
                             パスワード（確認用）
                         </label>
                         <input

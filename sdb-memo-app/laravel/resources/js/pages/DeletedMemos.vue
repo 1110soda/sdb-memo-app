@@ -3,8 +3,8 @@ import { ref, computed, onMounted } from "vue";
 import axios from "../lib/axios";
 import DocumentSvg from "../components/svgs/DocumentSvg.vue";
 import TrashSvg from "../components/svgs/TrashSvg.vue";
-import Modal from "../components/Modal.vue";
 import RestoreSvg from "../components/svgs/RestoreSvg.vue";
+import Modal from "../components/Modal.vue";
 import IconWithText from "../components/IconWithText.vue";
 
 interface Category {
@@ -193,31 +193,31 @@ onMounted(() => {
         <div class="w-full max-w-lg flex flex-col space-y-8">
             <div class="flex justify-between items-center mb-6">
                 <div class="flex items-center space-x-2">
-                    <DocumentSvg class="w-6 h-6 text-accent-800" />
-                    <h2 class="text-xl font-medium text-secondary-900">
+                    <DocumentSvg class="w-6 h-6 text-theme-accent" />
+                    <h2 class="text-xl font-medium text-theme-text-primary">
                         削除されたメモ
                     </h2>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <button @click="togglePagination" class="text-sm text-secondary-700 bg-black bg-opacity-0 rounded-full px-3 py-1 mr-2 hover:text-secondary-900 hover:bg-opacity-5 transition-all duration-300">
+                    <button @click="togglePagination" class="text-sm text-theme-text-secondary bg-theme-bg-accent rounded-full px-3 py-1 mr-2 hover:text-theme-text-primary hover-dim transition-all duration-300">
                         <span v-if="isPaginationEnabled">全て表示</span>
                         <span v-else>ページ形式で表示</span>
                     </button>
-                    <div class="bg-primary-200 text-sm text-secondary-700 rounded-full px-3 py-1">
+                    <div class="bg-theme-bg-accent-subtle text-sm text-theme-text-secondary rounded-full px-3 py-1">
                         {{ displayMemoCount }}
                     </div>
                 </div>
             </div>
-            <div v-if="isFetchingAPI" class="text-secondary-900 text-center">
+            <div v-if="isFetchingAPI" class="text-theme-text-primary text-center">
                 削除済みのメモを取得中...
             </div>
             <div v-else class="grid gap-4">
-                <p v-if="deletedMemos.length === 0" class="text-secondary-900 text-center">
+                <p v-if="deletedMemos.length === 0" class="text-theme-text-primary text-center">
                     まだ削除済みのメモがありません。
                 </p>
-                <div v-for="memo in deletedMemos" :key="memo.id" @click="toggleExpand(memo.id)" class="group relative bg-white min-w-0 p-4 rounded-lg shadow-lg cursor-pointer hover:scale-105 hover:shadow-secondary-400 transition-all duration-300">
+                <div v-for="memo in deletedMemos" :key="memo.id" @click="toggleExpand(memo.id)" class="group relative bg-theme-bg-card min-w-0 p-4 rounded-lg shadow-lg cursor-pointer hover:scale-105 transition-all duration-300">
                     <div class="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                        <button @click.stop="restoreMemo(memo.id)" class="text-secondary-700 hover:text-secondary-900 hover:bg-secondary-100 rounded-full p-2 transition-colors">
+                        <button @click.stop="restoreMemo(memo.id)" class="text-theme-text-secondary hover:text-theme-text-primary bg-theme-bg-card rounded-full p-2 transition-colors hover-dim">
                             <IconWithText>
                                 <template #icon>
                                     <RestoreSvg class="w-full h-full" />
@@ -227,7 +227,7 @@ onMounted(() => {
                                 </template>
                             </IconWithText>
                         </button>
-                        <button @click.stop="confirmDelete(memo)" class="text-red-600 hover:text-red-700 hover:bg-red-100 rounded-full p-2 transition-colors">
+                        <button @click.stop="confirmDelete(memo)" class="text-theme-interactive-danger bg-theme-bg-card rounded-full p-2 transition-colors hover-dim">
                             <IconWithText>
                                 <template #icon>
                                     <TrashSvg class="w-4 h-4" />
@@ -240,13 +240,13 @@ onMounted(() => {
                             </IconWithText>
                         </button>
                     </div>
-                    <h3 :class="{ 'line-clamp-1 break-words': !isExpanded(memo.id) }" class="font-semibold text-secondary-900 whitespace-pre-wrap break-words transition-all duration-300 mb-1">
+                    <h3 :class="{ 'line-clamp-1 break-words': !isExpanded(memo.id) }" class="font-semibold text-theme-text-primary whitespace-pre-wrap break-words transition-all duration-300 mb-1">
                         {{ memo.title }}
                     </h3>
-                    <p :class="{ 'line-clamp-3 break-words': !isExpanded(memo.id) }" class="text-sm text-secondary-700 whitespace-pre-wrap break-words transition-all duration-300">
+                    <p :class="{ 'line-clamp-3 break-words': !isExpanded(memo.id) }" class="text-sm text-theme-text-secondary whitespace-pre-wrap break-words transition-all duration-300">
                         {{ memo.content }}
                     </p>
-                    <p class="text-sm font-medium text-secondary-700 mt-2">
+                    <p class="text-sm font-medium text-theme-text-secondary mt-2">
                         作成: {{ memo.created_at }}、削除: {{ memo.updated_at }}
                     </p>
                 </div>
@@ -255,15 +255,15 @@ onMounted(() => {
                 <button
                     @click="fetchDeletedMemos()"
                     :disabled="currentPage === 1"
-                    class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 transition-all duration-300"
-                    :class="[currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:text-secondary-900 hover:bg-opacity-5']">
+                    class="px-3 py-1 rounded-full text-theme-text-secondary bg-theme-bg-accent transition-all duration-300"
+                    :class="[currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:text-theme-text-primary hover-dim']">
                     &lt;&lt;
                 </button>
                 <button
                     @click="fetchDeletedMemos(currentPage - 1)"
                     :disabled="currentPage === 1"
-                    class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 transition-all duration-300"
-                    :class="[currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:text-secondary-900 hover:bg-opacity-5']">
+                    class="px-3 py-1 rounded-full text-theme-text-secondary bg-theme-bg-accent transition-all duration-300"
+                    :class="[currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:text-theme-text-primary hover-dim']">
                     &lt;
                 </button>
                 <template v-for="page in displayedPages" :key="page">
@@ -272,26 +272,26 @@ onMounted(() => {
                         @click="fetchDeletedMemos(Number(page))"
                         :class="[
                             'px-3 py-1 rounded-full',
-                            page === currentPage ? 'text-secondary-900 bg-primary-200 font-semibold hover:cursor-not-allowed' : 'text-secondary-700 bg-black bg-opacity-0 hover:text-secondary-900 hover:bg-opacity-5 transition-all duration-300'
+                            page === currentPage ? 'text-theme-text-primary bg-theme-bg-accent-subtle hover:cursor-not-allowed' : 'text-theme-text-secondary bg-theme-bg-accent hover:text-theme-text-primary hover-dim transition-all duration-300'
                         ]">
                         {{ page}}
                     </button>
-                    <span v-else class="px-3 py-1 rounded-full text-secondary-700">
+                    <span v-else class="px-3 py-1 rounded-full text-theme-text-secondary">
                         {{ page }}
                     </span>
                 </template>
                 <button
                     @click="fetchDeletedMemos(currentPage + 1)"
                     :disabled="currentPage === lastPage"
-                    class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 transition-all duration-300"
-                    :class="[currentPage === lastPage ? 'opacity-50 cursor-not-allowed' : 'hover:text-secondary-900 hover:bg-opacity-5']">
+                    class="px-3 py-1 rounded-full text-theme-text-secondary bg-theme-bg-accent transition-all duration-300"
+                    :class="[currentPage === lastPage ? 'opacity-50 cursor-not-allowed' : 'hover:text-theme-text-primary hover-dim']">
                     &gt;
                 </button>
                 <button
                     @click="fetchDeletedMemos(lastPage)"
                     :disabled="currentPage === lastPage"
-                    class="px-3 py-1 rounded-full text-secondary-700 bg-black bg-opacity-0 transition-all duration-300"
-                    :class="[currentPage === lastPage ? 'opacity-50 cursor-not-allowed' : 'hover:text-secondary-900 hover:bg-opacity-5']">
+                    class="px-3 py-1 rounded-full text-theme-text-secondary bg-theme-bg-accent transition-all duration-300"
+                    :class="[currentPage === lastPage ? 'opacity-50 cursor-not-allowed' : 'hover:text-theme-text-primary hover-dim']">
                     &gt;&gt;
                 </button>
             </div>
@@ -306,10 +306,10 @@ onMounted(() => {
             完全削除したメモは復元できません。本当にこのメモを削除しますか？
         </template>
         <template #footer>
-            <button @click="cancelDelete" class="py-2 px-4 rounded bg-secondary-300 text-secondary-700 hover:bg-secondary-400 transition-colors">
+            <button @click="cancelDelete" class="py-2 px-4 rounded bg-theme-interactive-secondary text-theme-text-secondary hover-dim transition-colors">
                 キャンセル
             </button>
-            <button @click="deleteMemo" :disabled="isDeletingAPI" class="py-2 px-4 rounded bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <button @click="deleteMemo" :disabled="isDeletingAPI" class="py-2 px-4 rounded bg-theme-interactive-danger text-theme-text-interactive-primary hover-dim transition-colors btn-disabled">
                 <span v-if="isDeletingAPI">削除中...</span>
                 <span v-else>完全削除</span>
             </button>

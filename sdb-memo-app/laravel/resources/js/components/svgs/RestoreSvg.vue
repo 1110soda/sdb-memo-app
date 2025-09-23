@@ -15,5 +15,3 @@
         <path d="m8 22-4-4 4-4"/>
     </svg>
 </template>
-<script setup lang="ts">
-</script>
