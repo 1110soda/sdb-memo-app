@@ -12,7 +12,11 @@
                             ログインが必要です
                         </h2>
                         <p class="text-theme-text-secondary">
-                            この機能を利用するには、ログインしてください。
+                            この機能を利用するには、
+                            <router-link to="/login" class="text-theme-interactive-primary underline hover-dim">ログイン</router-link>
+                            または
+                            <router-link to="/createUser" class="text-theme-interactive-primary underline hover-dim">新規登録</router-link>
+                            してください。
                         </p>
                     </div>
                 </div>

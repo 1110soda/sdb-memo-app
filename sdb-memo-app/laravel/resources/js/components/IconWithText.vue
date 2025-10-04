@@ -10,7 +10,7 @@ const props = defineProps({
 
 const isHovered = ref(false);
 const textSpan = ref<HTMLElement | null>(null);
-const containerWidth = ref('20px'); //w-4 + px-1 - gap-x-1?
+const containerWidth = ref('24px'); //w-4 + px-1
 let leaveTimer: ReturnType<typeof setTimeout> | null = null;
 
 const shouldBeExpanded = computed(() => isHovered.value || props.isExpanded);
@@ -27,7 +27,7 @@ const calculateWidth = async () => {
             containerWidth.value = `${padding + iconWidth + gap + textWidth}px`;
         }
     } else {
-        containerWidth.value = '20px';
+        containerWidth.value = '24px';
     }
 };
 
