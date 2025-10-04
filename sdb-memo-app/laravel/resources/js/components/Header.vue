@@ -28,8 +28,8 @@ const handleLogout = async() => {
     <header class="p-4 flex flex-col items-center border-b bg-theme-bg-card border-theme-border-subtle shadow-lg pb-6 transition-colors duration-300">
         <div class="w-full flex justify-end items-center mb-2 space-x-4">
             <button @click="themeStore.toggleTheme" class="p-2 bg-theme-bg-card rounded-full hover-dim transition-colors">
-                <SunSvg v-if="themeStore.isDarkMode" class="w-5 h-5 text-theme-text-secondary" />
-                <MoonSvg v-else class="w-5 h-5 text-theme-text-secondary" />
+                <MoonSvg v-if="themeStore.isDarkMode" class="w-5 h-5 text-theme-text-secondary" />
+                <SunSvg v-else class="w-5 h-5 text-theme-text-secondary" />
             </button>
             <nav>
                 <ul class="flex space-x-4">

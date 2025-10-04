@@ -123,7 +123,7 @@ const sortOptions = ref([
     { value: 'updated_at_asc', label: '更新が古い順' },
     { value: 'deadline_at_desc', label: '期日が遠い順' },
     { value: 'deadline_at_asc', label: '期日が近い順' },
-])
+]);
 
 // 他
 const isContentEntered = computed(() => {

@@ -62,6 +62,7 @@ const handleCreateUser = async() => {
                             id="name"
                             v-model="name"
                             required
+                            placeholder="英数字、'‐'、'_'のみ"
                             autocomplete="name"
                             class="appearance-none border rounded w-full py-2 px-3 mt-1 text-secondary-700 leading-tight focus:outline-none focus:shadow-outline border-secondary-300 focus:border-accent-800 transition-colors"
                         />
@@ -75,6 +76,7 @@ const handleCreateUser = async() => {
                             id="email"
                             v-model="email"
                             required
+                            placeholder="例: user@example.com"
                             autocomplete="email"
                             class="appearance-none border rounded w-full py-2 px-3 mt-1 text-secondary-700 leading-tight focus:outline-none focus:shadow-outline border-secondary-300 focus:border-accent-800 transition-colors"
                         />
@@ -88,6 +90,7 @@ const handleCreateUser = async() => {
                             id="password"
                             v-model="password"
                             required
+                            placeholder="8文字以上"
                             autocomplete="new-password"
                             class="appearance-none border rounded w-full py-2 px-3 mt-1 text-secondary-700 leading-tight focus:outline-none focus:shadow-outline border-secondary-300 focus:border-accent-800 transition-colors"
                         />
